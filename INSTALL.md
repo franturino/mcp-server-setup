@@ -9,6 +9,18 @@ This guide explains how to install and set up the MCP Server Toolkit for Salesfo
 - `jq` command-line JSON processor installed
 - Access to Salesforce Code Builder environment
 
+## Initial Setup
+
+1. Open your Code Builder terminal
+2. Clone the setup repository:
+```bash
+git clone https://github.com/franturino/mcp-server-setup.git
+```
+3. Navigate to the setup directory:
+```bash
+cd mcp-server-setup
+```
+
 ## Installation Script
 
 The `setup.sh` script automates the installation process. Here's what it does:
