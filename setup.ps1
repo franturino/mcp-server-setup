@@ -14,8 +14,38 @@ if ((Test-Path "mcp_server_toolkit") -and (Test-Path "mcp_server_toolkit\.gitign
     Write-Host "Repository already exists, updating..."
     Set-Location -Path "mcp_server_toolkit"
     Write-Host "Current directory: $PWD"
+
+    # Ripristina permessi di scrittura su build e src prima del pull
+    foreach ($d in @("build","src")) {
+        if (Test-Path $d) {
+            Write-Host "Restoring write permission for $d and contents..."
+            $pattern = "$d\*"
+            $cmd = "attrib -R `"$pattern`" /S /D"
+            cmd /c $cmd
+            Write-Host "Write restored for $d."
+        } else {
+            Write-Host "Directory $d non trovata, salto."
+        }
+    }
+
     git pull
     Write-Host "Repository updated successfully!"
+    Write-Host "Building project..."
+    npm run build 2>&1
+    Write-Host "Build completed successfully!"
+
+    # Rendere build e src read-only (ricorsivamente) dopo il build
+    foreach ($d in @("build","src")) {
+        if (Test-Path $d) {
+            Write-Host "Setting $d and contents to read-only..."
+            $pattern = "$d\*"
+            $cmd = "attrib +R `"$pattern`" /S /D"
+            cmd /c $cmd
+            Write-Host "Permissions for $d set to read-only."
+        } else {
+            Write-Host "Directory $d non trovata, salto."
+        }
+    }
 }
 else {
     # Clone the repository if not exists
@@ -34,6 +64,19 @@ else {
     Write-Host "Building project..."
     npm run build 2>&1
     Write-Host "Build completed successfully!"
+
+    # Rendere build e src read-only (ricorsivamente)
+    foreach ($d in @("build","src")) {
+        if (Test-Path $d) {
+            Write-Host "Setting $d and contents to read-only..."
+            $pattern = "$d\*"
+            $cmd = "attrib +R `"$pattern`" /S /D"
+            cmd /c $cmd
+            Write-Host "Permissions for $d set to read-only."
+        } else {
+            Write-Host "Directory $d non trovata, salto."
+        }
+    }
     
     # Navigate to settings directory
     Set-Location -Path "$env:APPDATA\Code\User\globalStorage\salesforce.salesforcedx-einstein-gpt\settings"
