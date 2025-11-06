@@ -179,3 +179,36 @@ npm run build
   - Verify Code Builder environment accessibility
   - Check file permissions
 - Check network connectivity for git and npm operations
+
+## 🧠 Workflow: Recupera Defect per Sviluppatore
+
+Questo workflow consente di recuperare i defect assegnati a uno sviluppatore, filtrati per uno o più stati specifici.
+
+### 📥 Input
+
+Il workflow accetta due input:
+
+- `developer_name`: il nome dello sviluppatore
+- `defect_states_input`: uno o più stati dei defect, separati da virgola
+
+Gli stati devono essere tra quelli validi: New, Re-opened, Sospeso, Need More Information, Non Deployabile, Fix in Process,
+Ready to Test, In Deployment, Deploy PREPROD, Ready to test - NEW INTEGRA,
+Deploy SUPPORT, Ready to test - PREPROD, Ready to test - SUPPORT,
+Closed - End of life, Closed - Duplicate, Closed - Rejected, Closed - Resolved,
+Not a Defect, Deploy PROD
+
+### ⚙️ Comportamento
+
+- Se gli input vengono **passati direttamente nel prompt**, il workflow li utilizza senza richiederli.
+  - Esempio:
+    ```
+    /recupera-defect-sviluppatore.md "Mario Rossi" "New,Ready to Test"
+    ```
+- Se uno o entrambi gli input **non sono presenti**, il workflow li richiede tramite prompt interattivo.
+- Il workflow **valida gli stati** inseriti:
+  - Se uno o più stati non sono validi, mostra un messaggio di errore.
+  - Se tutti gli stati sono validi, invoca il server MCP `mcp_server_toolkit` con il metodo `getDefectsByDeveloperAndStatus`.
+
+### 📤 Output
+
+Il workflow crea un task che recupera i defect filtrati per sviluppatore e stato, utile per analisi, report o debugging.
