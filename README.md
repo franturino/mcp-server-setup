@@ -327,3 +327,31 @@ The workflow accepts the following inputs:
 The workflow creates a task that inserts a `NDC_XMLObject__c` record in Salesforce, associating it with the specified defect and external codes. The result includes a success or error message returned by the MCP server.
 
 This workflow is useful for automating metadata creation for bulk imports and ensuring traceability through defect linkage.
+
+## 📊 Workflow: Query Metadata by Defect in Salesforce
+
+This workflow allows you to retrieve metadata records associated with a specific defect in Salesforce, using either the defect ID or its code. It interacts with the MCP server tool `query_metadata_by_defect_salesforce`.
+
+### 📥 Input
+
+The workflow accepts the following inputs:
+
+- `defectId` *(optional)*: The ID of the Defect__c record (e.g., `a1B0500000abcdeAAA`)
+- `defectCode` *(optional)*: The code of the defect (e.g., `D-123`)
+
+### ⚙️ Behavior
+
+- If the inputs are **provided directly in the prompt**, the workflow uses them without asking.
+  - Example:
+    ```
+    /query-metadata-by-defect.md "D-123"
+    ```
+- If neither input is provided, the workflow will prompt the user to enter either the defect ID or code.
+- The workflow invokes the MCP server tool `query_metadata_by_defect_salesforce`, which:
+  - Resolves the defect ID if only the code is provided
+  - Queries all metadata records (`NDC_XMLObject__c`) linked to the defect
+  - Returns the result in JSON format
+
+### 📤 Output
+
+The workflow creates a task that returns the metadata records associated with the specified defect. This is useful for tracking, auditing, or validating import configurations.
