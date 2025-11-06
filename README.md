@@ -191,7 +191,9 @@ Il workflow accetta due input:
 - `developer_name`: il nome dello sviluppatore
 - `defect_states_input`: uno o più stati dei defect, separati da virgola
 
-Gli stati devono essere tra quelli validi: New, Re-opened, Sospeso, Need More Information, Non Deployabile, Fix in Process,
+Gli stati devono essere tra quelli validi: 
+
+New, Re-opened, Sospeso, Need More Information, Non Deployabile, Fix in Process,
 Ready to Test, In Deployment, Deploy PREPROD, Ready to test - NEW INTEGRA,
 Deploy SUPPORT, Ready to test - PREPROD, Ready to test - SUPPORT,
 Closed - End of life, Closed - Duplicate, Closed - Rejected, Closed - Resolved,
@@ -212,3 +214,87 @@ Not a Defect, Deploy PROD
 ### 📤 Output
 
 Il workflow crea un task che recupera i defect filtrati per sviluppatore e stato, utile per analisi, report o debugging.
+
+## 🛠️ Workflow: Aggiorna Stato Defect con Validazione
+
+Questo workflow consente di aggiornare lo stato di un defect, verificando che lo stato inserito sia tra quelli consentiti.
+
+### 📥 Input
+
+Il workflow accetta due input:
+
+- `defect_code`: il codice del defect da aggiornare (es. D-123)
+- `defect_status`: lo stato da assegnare al defect
+
+Gli stati validi sono:
+
+New, Re-opened, Sospeso, Need More Information, Non Deployabile, Fix in Process,
+Ready to Test, In Deployment, Deploy PREPROD, Ready to test - NEW INTEGRA,
+Deploy SUPPORT, Ready to test - PREPROD, Ready to test - SUPPORT,
+Closed - End of life, Closed - Duplicate, Closed - Rejected, Closed - Resolved,
+Not a Defect, Deploy PROD
+
+### ⚙️ Comportamento
+
+- Se gli input vengono **passati direttamente nel prompt**, il workflow li utilizza senza richiederli.
+  - Esempio:
+    ```
+    /aggiorna-stato-defect.md "D-123" "Ready to Test"
+    ```
+- Se uno o entrambi gli input **non sono presenti**, il workflow li richiede tramite prompt interattivo.
+- Il workflow **valida lo stato** inserito:
+  - Se lo stato non è valido, mostra un messaggio di errore con l’elenco degli stati consentiti.
+  - Se lo stato è valido, invoca il server MCP `mcp_server_toolkit` con il metodo `updateDefectStatus`.
+
+### 📤 Output
+
+Il workflow crea un task che aggiorna lo stato del defect specificato, utile per la gestione operativa e il tracciamento delle modifiche.
+
+## 📋 Workflow: Richiedi Dettagli Multipli Defect
+
+Questo workflow consente di recuperare i dettagli di uno o più defect specificati dall’utente.
+
+### 📥 Input
+
+Il workflow accetta un input:
+
+- `defect_codes`: una lista di codici di defect separati da virgola (es. `D-123,D-456,D-789`)
+
+### ⚙️ Comportamento
+
+- Se l’input `defect_codes` viene **passato direttamente nel prompt**, il workflow lo utilizza senza richiederlo.
+  - Esempio:
+    ```
+    /richiedi-defect-details.md "D-123,D-456"
+    ```
+- Se l’input **non è presente**, il workflow lo richiede tramite prompt interattivo.
+- Il workflow esegue un ciclo su ciascun codice inserito e crea un task per recuperare i dettagli del defect tramite il server MCP `mcp_server_toolkit`.
+
+### 📤 Output
+
+Per ogni codice fornito, il workflow crea un task che invoca il metodo `getDefectDetails` sul server MCP, utile per analisi, debugging o tracciamento.
+
+## 🧾 Workflow: Inserisci Configurazione Manuale
+
+Questo workflow consente di inserire una configurazione manuale su Salesforce, associata a un defect specifico, tramite il server MCP.
+
+### 📥 Input
+
+Il workflow accetta due input:
+
+- `defect_code`: il codice del defect (es. D-123)
+- `config_note`: la nota da associare alla configurazione manuale
+
+### ⚙️ Comportamento
+
+- Se gli input vengono **passati direttamente nel prompt**, il workflow li utilizza senza richiederli.
+  - Esempio:
+    ```
+    /inserisci-configurazione-manuale.md "D-123" "Configurazione necessaria per ambiente di test"
+    ```
+- Se uno o entrambi gli input **non sono presenti**, il workflow li richiede tramite prompt interattivo.
+- Una volta raccolti i dati, il workflow invoca il server MCP `mcp_server_toolkit` con il metodo `insertManualConfiguration`.
+
+### 📤 Output
+
+Il workflow crea un task che registra la configurazione manuale associata al defect specificato, utile per la tracciabilità delle modifiche e la gestione tecnica.
