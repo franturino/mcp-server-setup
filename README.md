@@ -298,3 +298,32 @@ The workflow accepts two inputs:
 ### 📤 Output
 
 The workflow creates a task that records the manual configuration associated with the specified defect, useful for change tracking and technical management.
+
+## 🧾 Workflow: Create Metadata for Import to Salesforce
+
+This workflow allows you to create a metadata record for importing data into a specific Salesforce table using external codes. It interacts with the MCP server tool `create_metadata_for_import_salesforce`.
+
+### 📥 Input
+
+The workflow accepts the following inputs:
+
+- `defectId` *(optional)*: The ID of the Defect__c record (e.g., `a1B0500000abcdeAAA`)
+- `defectName` *(optional)*: The name/code of the defect (e.g., `D-123`)
+- `tableName`: The name of the table where records will be imported
+- `externalCodesInput`: A comma-separated list of external codes to associate with the metadata
+
+### ⚙️ Behavior
+
+- If the inputs are **provided directly in the prompt**, the workflow uses them without asking.
+  - Example:
+    ```
+    /crea-metadata-import-salesforce.md "D-123" "ImportTable__c" "codeA,codeB,codeC"
+    ```
+- If one or more inputs are **missing**, the workflow will prompt the user interactively.
+- The workflow converts the external codes into an array and invokes the MCP server tool `create_metadata_for_import_salesforce`.
+
+### 📤 Output
+
+The workflow creates a task that inserts a `NDC_XMLObject__c` record in Salesforce, associating it with the specified defect and external codes. The result includes a success or error message returned by the MCP server.
+
+This workflow is useful for automating metadata creation for bulk imports and ensuring traceability through defect linkage.
