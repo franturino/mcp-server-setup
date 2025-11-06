@@ -180,18 +180,18 @@ npm run build
   - Check file permissions
 - Check network connectivity for git and npm operations
 
-## 🧠 Workflow: Recupera Defect per Sviluppatore
+## 🧠 Workflow: Retrieve Defects by Developer
 
-Questo workflow consente di recuperare i defect assegnati a uno sviluppatore, filtrati per uno o più stati specifici.
+This workflow allows you to retrieve defects assigned to a developer, filtered by one or more specific statuses.
 
 ### 📥 Input
 
-Il workflow accetta due input:
+The workflow accepts two inputs:
 
-- `developer_name`: il nome dello sviluppatore
-- `defect_states_input`: uno o più stati dei defect, separati da virgola
+- `developer_name`: the name of the developer
+- `defect_states_input`: one or more defect statuses, separated by commas
 
-Gli stati devono essere tra quelli validi: 
+Valid statuses include:
 
 New, Re-opened, Sospeso, Need More Information, Non Deployabile, Fix in Process,
 Ready to Test, In Deployment, Deploy PREPROD, Ready to test - NEW INTEGRA,
@@ -199,34 +199,34 @@ Deploy SUPPORT, Ready to test - PREPROD, Ready to test - SUPPORT,
 Closed - End of life, Closed - Duplicate, Closed - Rejected, Closed - Resolved,
 Not a Defect, Deploy PROD
 
-### ⚙️ Comportamento
+### ⚙️ Behavior
 
-- Se gli input vengono **passati direttamente nel prompt**, il workflow li utilizza senza richiederli.
-  - Esempio:
+- If the inputs are **provided directly in the prompt**, the workflow uses them without asking.
+  - Example:
     ```
     /recupera-defect-sviluppatore.md "Mario Rossi" "New,Ready to Test"
     ```
-- Se uno o entrambi gli input **non sono presenti**, il workflow li richiede tramite prompt interattivo.
-- Il workflow **valida gli stati** inseriti:
-  - Se uno o più stati non sono validi, mostra un messaggio di errore.
-  - Se tutti gli stati sono validi, invoca il server MCP `mcp_server_toolkit` con il metodo `getDefectsByDeveloperAndStatus`.
+- If one or both inputs are **missing**, the workflow will prompt the user interactively.
+- The workflow **validates the provided statuses**:
+  - If one or more statuses are invalid, it displays an error message.
+  - If all statuses are valid, it invokes the MCP server `mcp_server_toolkit` using the method `getDefectsByDeveloperAndStatus`.
 
 ### 📤 Output
 
-Il workflow crea un task che recupera i defect filtrati per sviluppatore e stato, utile per analisi, report o debugging.
+The workflow creates a task that retrieves defects filtered by developer and status, useful for analysis, reporting, or debugging.
 
-## 🛠️ Workflow: Aggiorna Stato Defect con Validazione
+## 🛠️ Workflow: Update Defect Status with Validation
 
-Questo workflow consente di aggiornare lo stato di un defect, verificando che lo stato inserito sia tra quelli consentiti.
+This workflow allows you to update the status of a defect, verifying that the provided status is among the allowed values.
 
 ### 📥 Input
 
-Il workflow accetta due input:
+The workflow accepts two inputs:
 
-- `defect_code`: il codice del defect da aggiornare (es. D-123)
-- `defect_status`: lo stato da assegnare al defect
+- `defect_code`: the defect code to update (e.g., D-123)
+- `defect_status`: the status to assign to the defect
 
-Gli stati validi sono:
+Valid statuses include:
 
 New, Re-opened, Sospeso, Need More Information, Non Deployabile, Fix in Process,
 Ready to Test, In Deployment, Deploy PREPROD, Ready to test - NEW INTEGRA,
@@ -234,67 +234,67 @@ Deploy SUPPORT, Ready to test - PREPROD, Ready to test - SUPPORT,
 Closed - End of life, Closed - Duplicate, Closed - Rejected, Closed - Resolved,
 Not a Defect, Deploy PROD
 
-### ⚙️ Comportamento
+### ⚙️ Behavior
 
-- Se gli input vengono **passati direttamente nel prompt**, il workflow li utilizza senza richiederli.
-  - Esempio:
+- If the inputs are **provided directly in the prompt**, the workflow uses them without asking.
+  - Example:
     ```
     /aggiorna-stato-defect.md "D-123" "Ready to Test"
     ```
-- Se uno o entrambi gli input **non sono presenti**, il workflow li richiede tramite prompt interattivo.
-- Il workflow **valida lo stato** inserito:
-  - Se lo stato non è valido, mostra un messaggio di errore con l’elenco degli stati consentiti.
-  - Se lo stato è valido, invoca il server MCP `mcp_server_toolkit` con il metodo `updateDefectStatus`.
+- If one or both inputs are **missing**, the workflow will prompt the user interactively.
+- The workflow **validates the status**:
+  - If the status is invalid, it displays an error message with the list of allowed statuses.
+  - If the status is valid, it invokes the MCP server `mcp_server_toolkit` using the method `updateDefectStatus`.
 
 ### 📤 Output
 
-Il workflow crea un task che aggiorna lo stato del defect specificato, utile per la gestione operativa e il tracciamento delle modifiche.
+The workflow creates a task that updates the status of the specified defect, useful for operational management and change tracking.
 
-## 📋 Workflow: Richiedi Dettagli Multipli Defect
+## 📋 Workflow: Retrieve Multiple Defect Details
 
-Questo workflow consente di recuperare i dettagli di uno o più defect specificati dall’utente.
+This workflow allows you to retrieve details for one or more defects specified by the user.
 
 ### 📥 Input
 
-Il workflow accetta un input:
+The workflow accepts one input:
 
-- `defect_codes`: una lista di codici di defect separati da virgola (es. `D-123,D-456,D-789`)
+- `defect_codes`: a list of defect codes separated by commas (e.g., `D-123,D-456,D-789`)
 
-### ⚙️ Comportamento
+### ⚙️ Behavior
 
-- Se l’input `defect_codes` viene **passato direttamente nel prompt**, il workflow lo utilizza senza richiederlo.
-  - Esempio:
+- If the `defect_codes` input is **provided directly in the prompt**, the workflow uses it without asking.
+  - Example:
     ```
     /richiedi-defect-details.md "D-123,D-456"
     ```
-- Se l’input **non è presente**, il workflow lo richiede tramite prompt interattivo.
-- Il workflow esegue un ciclo su ciascun codice inserito e crea un task per recuperare i dettagli del defect tramite il server MCP `mcp_server_toolkit`.
+- If the input is **missing**, the workflow will prompt the user interactively.
+- The workflow loops through each provided code and creates a task to retrieve defect details using the MCP server `mcp_server_toolkit`.
 
 ### 📤 Output
 
-Per ogni codice fornito, il workflow crea un task che invoca il metodo `getDefectDetails` sul server MCP, utile per analisi, debugging o tracciamento.
+For each code provided, the workflow creates a task that invokes the `getDefectDetails` method on the MCP server, useful for analysis, debugging, or tracking.
 
-## 🧾 Workflow: Inserisci Configurazione Manuale
+## 🧾 Workflow: Insert Manual Configuration
 
-Questo workflow consente di inserire una configurazione manuale su Salesforce, associata a un defect specifico, tramite il server MCP.
+This workflow allows you to insert a manual configuration in Salesforce, associated with a specific defect, using the MCP server.
 
 ### 📥 Input
 
-Il workflow accetta due input:
+The workflow accepts two inputs:
 
-- `defect_code`: il codice del defect (es. D-123)
-- `config_note`: la nota da associare alla configurazione manuale
+- `defect_code`: the defect code (e.g., D-123)
+- `config_note`: the note to associate with the manual configuration
 
-### ⚙️ Comportamento
+### ⚙️ Behavior
 
-- Se gli input vengono **passati direttamente nel prompt**, il workflow li utilizza senza richiederli.
-  - Esempio:
+- If the inputs are **provided directly in the prompt**, the workflow uses them without asking.
+  - Example:
     ```
-    /inserisci-configurazione-manuale.md "D-123" "Configurazione necessaria per ambiente di test"
+    /inserisci-configurazione-manuale.md "D-123" "Configuration required for test environment"
     ```
-- Se uno o entrambi gli input **non sono presenti**, il workflow li richiede tramite prompt interattivo.
-- Una volta raccolti i dati, il workflow invoca il server MCP `mcp_server_toolkit` con il metodo `insertManualConfiguration`.
+- If one or both inputs are **missing**, the workflow will prompt the user interactively.
+- Once the data is collected, the workflow invokes the MCP server `mcp_server_toolkit` using the method `insertManualConfiguration`.
 
 ### 📤 Output
 
-Il workflow crea un task che registra la configurazione manuale associata al defect specificato, utile per la tracciabilità delle modifiche e la gestione tecnica.
+The workflow creates a task that records the manual configuration associated with the specified defect, useful for change tracking and technical management.
