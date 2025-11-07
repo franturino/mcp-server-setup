@@ -1,89 +1,22 @@
-description: "Workflow per creare metadata associati a un Defect Salesforce analizzando risorse da deployare"
-inputs:
-  defectCode:
-    type: string
-    required: true
-    description: "Codice del Defect (es. D-123)"
+# Workflow: Creazione Metadata per Defect Salesforce
 
-steps:
-  - id: askResources
-    action: core:prompt
-    inputs:
-      prompt: |
-        Inserisci la lista delle risorse Salesforce da includere nel package.xml.
-        Esempio:
-        [[Custom Object:
-        BrimLeveTracking__c
+# 1. Acquisizione del codice del Defect (passato come parametro iniziale)
+- <input>[(defectCode)]: Inserisci il codice del Defect (es. D-123)
 
-        Custom Fields:
-        BrimLeveTracking__c.ExternalCode__c,
-        BrimLeveTracking__c.OriginOfferCode__c,
-        BrimLeveTracking__c.StartDate__c,
-        BrimLeveTracking__c.PodPdr__c,
-        ConditionOverride__c.BrimLeveTrackingId__c
+# 2. Recupera le risorse modificate oggi in Code Builder
+- <command>[(risorse_modificate_oggi)]: Analizza lo stato del progetto in Code Builder e restituisci l'elenco delle risorse Salesforce modificate oggi (formato: nomi file o identificatori logici)
 
-        Layout:
-        BrimLeveTracking__c-Tracciamento Leve Brim Layout
+# 3. Mostra all'utente le risorse modificate e chiedi quali includere nel deploy
+- @(nomi_risorse)[max=10]: Ecco le risorse modificate oggi: "@risorse_modificate_oggi". Quali vuoi includere nel deploy?
 
-        ApexClass:
-        AsyncAddendumIntegrationProcessB2Be,
-        AsyncAddendumB2be,
-        AsyncFulfillmentB2Be,
-        B2BeAddendaContrattualizzaController,
-        OfferSiteRepository]]
-    outputs:
-      - name: rawResources
-        type: string
+# 4. Prompt LLM per inferire la tipologia di ciascuna risorsa
+- <command>[(risorse_tipizzate)]: Per ciascun nome in "@nomi_risorse", determina la tipologia Salesforce corretta (es. ApexClass, CustomObject, ApexTrigger, LightningComponentBundle, ecc.) e restituisci una lista strutturata pronta per package.xml
 
-  - id: buildPackageXml
-    action: utils:transform:code
-    inputs:
-      language: javascript
-      code: |
-        function parseResources(raw) {
-          const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
-          const typeMap = {};
-          let currentType = null;
+# 5. Costruzione del package.xml nel formato Salesforce
+- <command>[(packageXml)]: Genera un file package.xml valido per Salesforce utilizzando le risorse tipizzate in "@risorse_tipizzate"
 
-          for (const line of lines) {
-            if (line.endsWith(':')) {
-              currentType = line.replace(':', '').trim();
-              typeMap[currentType] = [];
-            } else if (currentType) {
-              const items = line.split(',').map(i => i.trim()).filter(i => i);
-              typeMap[currentType].push(...items);
-            }
-          }
+# 6. Esecuzione del tool create_defect_metadata_salesforce sul server MCP
+- <tool>: mcp_server_toolkit.create_defect_metadata_salesforce --defectCode "@defectCode" --packageXml "@packageXml"
 
-          const xmlParts = ['<?xml version="1.0" encoding="UTF-8"?>', '<Package xmlns="http://soap.sforce.com/2006/04/metadata">'];
-          for (const [type, members] of Object.entries(typeMap)) {
-            xmlParts.push('  <types>');
-            members.forEach(member => {
-              xmlParts.push(`    <members>${member}</members>`);
-            });
-            xmlParts.push(`    <name>${type}</name>`);
-            xmlParts.push('  </types>');
-          }
-          xmlParts.push('  <version>58.0</version>');
-          xmlParts.push('</Package>');
-          return xmlParts.join('\n');
-        }
-
-        return parseResources(inputs.rawResources);
-    outputs:
-      - name: packageXml
-        type: string
-
-  - id: createMetadata
-    action: mcp_server_toolkit.create_defect_metadata_salesforce
-    inputs:
-      defectCode: "${{inputs.defectCode}}"
-      packageXml: "${{steps.buildPackageXml.outputs.packageXml}}"
-    outputs:
-      - name: result
-        type: string
-
-outputs:
-  - name: metadataCreationResult
-    type: string
-    value: "${{steps.createMetadata.outputs.result}}"
+# 7. Output finale
+- <output>: Metadata creati con successo per il Defect "@defectCode".
