@@ -120,7 +120,7 @@ echo "Configuring cron jobs..."
 
 CRON_FILE="/etc/cron.d/e2scrub_all"
 # Controlla se il file esiste (il path /etc/cron.d richiede root)
-touch "$CRON_FILE"
+#touch "$CRON_FILE"
 
 # --- Job 1: Script di aggiornamento mcp_server_toolkit ---
 echo "Configuring cron job for $UPDATE_SCRIPT_PATH..."
