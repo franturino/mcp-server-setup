@@ -15,7 +15,7 @@ Write-Host "Update script path: $UpdateScriptPath"
 
 # --- ‼️ MODIFICA QUESTI PERCORSI ‼️ ---
 $BaseStoragePath = "C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt" # Esempio di percorso Windows
-$DxProjectPath = "C:\Users\codebuilder\projects\dx-project" # Esempio di percorso progetto
+$DxProjectPath = "C:\Users\codebuilder\dx-project" # Esempio di percorso progetto
 $GitPullDir = "C:\Users\codebuilder\mcp-server-setup" # Esempio di percorso per il git pull
 # --- Fine percorsi da modificare ---
 
@@ -73,6 +73,8 @@ Write-Host "Copying workflows..."
 $WorkflowSource = Join-Path $ScriptDir "workflows\*"
 $WorkflowDest = Join-Path $DxProjectPath ".a4rules\workflows\"
 if (Test-Path $WorkflowSource) {
+    # Assicura che la cartella di destinazione esista
+    New-Item -Path $WorkflowDest -ItemType Directory -Force | Out-Null
     Copy-Item -Path $WorkflowSource -Destination $WorkflowDest -Recurse -Force
     Write-Host "Copied workflows to $WorkflowDest"
 } else {
@@ -164,26 +166,47 @@ $Trigger2 = New-ScheduledTaskTrigger -At 23:00 -Daily
 # --- Job 1: Script di aggiornamento mcp_server_toolkit ---
 $TaskName1 = "MCP_Server_Toolkit_Update"
 Write-Host "Configuring task: $TaskName1..."
-$Action1 = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File `"$UpdateScriptPath`""
+$Action1 = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$UpdateScriptPath`""
 
 if (!(Get-ScheduledTask -TaskName $TaskName1 -ErrorAction SilentlyContinue)) {
     Register-ScheduledTask -TaskName $TaskName1 -Action $Action1 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon -Force
     Write-Host "Task $TaskName1 creato."
 } else {
-    Write-Host "Task $TaskName1 già esistente. Salto."
+    Write-Host "Task $TaskName1 già esistente. Aggiorno l'azione..."
+    Set-ScheduledTask -TaskName $TaskName1 -Action $Action1 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon
+    Write-Host "Task $TaskName1 updated."
 }
 
-# --- Job 2: git pull per mcp-server-setup ---
-$TaskName2 = "MCP_Server_Setup_Pull"
+# --- Job 2: git pull per mcp-server-setup E COPIA WORKFLOWS (MODIFICATO) ---
+$TaskName2 = "MCP_Server_Setup_Pull_And_Copy"
 Write-Host "Configuring task: $TaskName2..."
-# Il comando 'git pull' viene eseguito nella directory specificata
-$Action2 = New-ScheduledTaskAction -Execute "git.exe" -Argument "pull" -WorkingDirectory $GitPullDir
 
+# Definisco i percorsi per il Job 2
+$SourceWfPath = Join-Path $GitPullDir "workflows\*"
+$DestWfPath = Join-Path $DxProjectPath ".a4rules\workflows\"
+
+# Creo il comando completo per PowerShell.
+$CommandString = "Set-Location -Path '$GitPullDir'; git pull; New-Item -Path '$DestWfPath' -ItemType Directory -Force | Out-Null; Copy-Item -Path '$SourceWfPath' -Destination '$DestWfPath' -Recurse -Force"
+
+# L'azione esegue powershell.exe con la stringa di comando
+$Action2 = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command `"$CommandString`""
+
+# Controllo se il task con il vecchio nome ("MCP_Server_Setup_Pull") esiste e lo rimuovo
+$OldTaskName2 = "MCP_Server_Setup_Pull"
+if (Get-ScheduledTask -TaskName $OldTaskName2 -ErrorAction SilentlyContinue) {
+    Write-Host "Removing old task: $OldTaskName2"
+    Unregister-ScheduledTask -TaskName $OldTaskName2 -Confirm:$false
+}
+
+# Ora controllo e creo/aggiorno il NUOVO task
 if (!(Get-ScheduledTask -TaskName $TaskName2 -ErrorAction SilentlyContinue)) {
+    Write-Host "Creating task: $TaskName2"
     Register-ScheduledTask -TaskName $TaskName2 -Action $Action2 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon -Force
     Write-Host "Task $TaskName2 creato."
 } else {
-    Write-Host "Task $TaskName2 già esistente. Salto."
+    Write-Host "Task $TaskName2 already exists. Updating task..."
+    Set-ScheduledTask -TaskName $TaskName2 -Action $Action2 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon
+    Write-Host "Task $TaskName2 updated."
 }
 
 Write-Host "---"

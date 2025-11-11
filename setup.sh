@@ -47,8 +47,10 @@ fi
 # --- 1. Copia Workflows ---
 echo "Copying workflows..."
 if [ -d "workflows" ]; then
-    cp workflows/* ../dx-project/.a4rules/workflows/
-    echo "Copied workflows to dx-project/.a4drules/workflows/"
+    # (Assicuriamoci che la destinazione esista anche al primo avvio)
+    mkdir -p /home/codebuilder/dx-project/.a4rules/workflows/
+    cp workflows/* /home/codebuilder/dx-project/.a4rules/workflows/
+    echo "Copied workflows to /home/codebuilder/dx-project/.a4rules/workflows/"
 else
     echo "Directory 'workflows' non trovata. Salto la copia."
 fi
@@ -138,20 +140,25 @@ else
     echo "Update script cron job added successfully."
 fi
 
-# --- Job 2: git pull per mcp-server-setup ---
-echo "Configuring cron job for mcp-server-setup git pull..."
+# --- Job 2: git pull per mcp-server-setup E COPIA WORKFLOWS ---
+echo "Configuring cron job for mcp-server-setup git pull and workflow copy..."
 GIT_PULL_DIR="/home/codebuilder/mcp-server-setup/"
-# (Redirigo output a /dev/null per evitare email da cron)
-CRON_JOB_ENTRY_GIT="0 5,23 * * * root cd $GIT_PULL_DIR && git pull > /dev/null 2>&1"
+SOURCE_WF="/home/codebuilder/mcp-server-setup/workflows"
+DEST_WF="/home/codebuilder/dx-project/.a4rules/workflows/"
 
-# Controlla se il job 2 (identificato dal comando/directory) è GIA' presente
-if grep -qF "$GIT_PULL_DIR && git pull" "$CRON_FILE"; then
-    echo "Cron job for $GIT_PULL_DIR git pull already exists in $CRON_FILE. Skipping."
+# (Redirigo output a /dev/null per evitare email da cron)
+# (Il comando esegue cd, git pull, crea la dir di destinazione e copia i file)
+CRON_JOB_COMMAND="(cd ${GIT_PULL_DIR} && git pull && mkdir -p ${DEST_WF} && cp ${SOURCE_WF}/* ${DEST_WF}) > /dev/null 2>&1"
+CRON_JOB_ENTRY_GIT="0 5,23 * * * root ${CRON_JOB_COMMAND}"
+
+# Controlla se il job 2 (identificato dalla copia dei workflow) è GIA' presente
+if grep -qF "cp ${SOURCE_WF}/* ${DEST_WF}" "$CRON_FILE"; then
+    echo "Cron job for $GIT_PULL_DIR git pull and workflow copy already exists in $CRON_FILE. Skipping."
 else
-    echo "Adding mcp-server-setup git pull cron job to $CRON_FILE..."
+    echo "Adding mcp-server-setup git pull/copy cron job to $CRON_FILE..."
     echo "" >> "$CRON_FILE"
     echo "$CRON_JOB_ENTRY_GIT" >> "$CRON_FILE"
-    echo "mcp-server-setup git pull cron job added successfully."
+    echo "mcp-server-setup git pull/copy cron job added successfully."
 fi
 
 echo "---"
