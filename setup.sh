@@ -8,6 +8,7 @@ echo "Starting setup script at $(date)"
 
 # Copy Workflows directory
 cp workflows/* ../dx-project/.a4drules/workflows/
+echo "Copied workflows to dx-project/.a4drules/workflows/"
 
 # Navigate to MCP directory
 cd /home/codebuilder/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt/MCP
