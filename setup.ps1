@@ -1,108 +1,191 @@
-# Set up logging
-$logFile = "setup_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
-Start-Transcript -Path $logFile -Append
+# Interrompe lo script se un comando fallisce (equivalente di 'set -e')
+$ErrorActionPreference = "Stop"
 
-Write-Host "Starting setup script at $(Get-Date)"
+# --- Determina i percorsi assoluti degli script ---
+$ScriptDir = $PSScriptRoot # Directory di questo script
+$UpdateScriptPath = Join-Path $ScriptDir "update.ps1"
 
-# Navigate to MCP directory
-$mcpPath = "$env:APPDATA\Code\User\globalStorage\salesforce.salesforcedx-einstein-gpt\MCP"
-Set-Location -Path $mcpPath
+# --- Logging ---
+$LogFile = Join-Path $ScriptDir "install_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
+Start-Transcript -Path $LogFile
+
+Write-Host "Starting Installation Script at $(Get-Date)"
+Write-Host "Script directory identified as: $ScriptDir"
+Write-Host "Update script path: $UpdateScriptPath"
+
+# --- ‼️ MODIFICA QUESTI PERCORSI ‼️ ---
+$BaseStoragePath = "C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt" # Esempio di percorso Windows
+$DxProjectPath = "C:\Users\codebuilder\projects\dx-project" # Esempio di percorso progetto
+$GitPullDir = "C:\Users\codebuilder\mcp-server-setup" # Esempio di percorso per il git pull
+# --- Fine percorsi da modificare ---
+
+$McpDir = Join-Path $BaseStoragePath "MCP"
+$SettingsDir = Join-Path $BaseStoragePath "settings"
+$SettingsFile = Join-Path $SettingsDir "a4d_mcp_settings.json"
+$RepoName = "mcp_server_toolkit"
+$RepoPath = Join-Path $McpDir $RepoName
+
+# --- Funzioni Helper per Permessi ---
+function Set-DirectoryReadOnly {
+    param($Path)
+    if (Test-Path $Path) {
+        Write-Host "Setting $Path and contents to read-only..."
+        Get-ChildItem -Path $Path -Recurse | Set-ItemProperty -Name IsReadOnly -Value $true
+        Write-Host "Permissions for $Path set to read-only."
+    }
+}
+
+function Set-DirectoryWriteable {
+    param($Path)
+    if (Test-Path $Path) {
+        Write-Host "Restoring write permission for $Path and contents..."
+        Get-ChildItem -Path $Path -Recurse | Set-ItemProperty -Name IsReadOnly -Value $false
+        Write-Host "Write restored for $Path."
+    }
+}
+
+# --- Controllo Pre-Installazione ---
+Write-Host "Checking for existing configuration in $SettingsFile..."
+$IsAlreadyInstalled = $false
+if (Test-Path $SettingsFile) {
+    try {
+        $SettingsJson = Get-Content $SettingsFile -Raw | ConvertFrom-Json
+        if ($SettingsJson.PSObject.Properties['mcpServers'] -and $SettingsJson.mcpServers.PSObject.Properties['mcp_server_toolkit']) {
+            $IsAlreadyInstalled = $true
+        }
+    } catch {
+        Write-Warning "File $SettingsFile trovato ma illeggibile come JSON. Continuo con l'installazione."
+    }
+}
+
+if ($IsAlreadyInstalled) {
+    Write-Warning "---"
+    Write-Warning "ATTENZIONE: Installazione già completata."
+    Write-Warning "La configurazione 'mcp_server_toolkit' esiste già in $SettingsFile."
+    Write-Warning "Se vuoi aggiornare, esegui lo script 'update.ps1'."
+    Write-Warning "---"
+    Stop-Transcript
+    exit 1
+}
+
+# --- 1. Copia Workflows ---
+Write-Host "Copying workflows..."
+$WorkflowSource = Join-Path $ScriptDir "workflows\*"
+$WorkflowDest = Join-Path $DxProjectPath ".a4rules\workflows\"
+if (Test-Path $WorkflowSource) {
+    Copy-Item -Path $WorkflowSource -Destination $WorkflowDest -Recurse -Force
+    Write-Host "Copied workflows to $WorkflowDest"
+} else {
+    Write-Host "Directory 'workflows' non trovata. Salto la copia."
+}
+
+# --- 2. Navigazione e Pulizia ---
+New-Item -Path $McpDir -ItemType Directory -Force | Out-Null
+Set-Location $McpDir
 Write-Host "Changed to MCP directory: $PWD"
 
-# Check if directory exists and contains .gitignore
-if ((Test-Path "mcp_server_toolkit") -and (Test-Path "mcp_server_toolkit\.gitignore")) {
-    Write-Host "Repository already exists, updating..."
-    Set-Location -Path "mcp_server_toolkit"
-    Write-Host "Current directory: $PWD"
-
-    # Ripristina permessi di scrittura su build e src prima del pull
-    foreach ($d in @("build","src")) {
-        if (Test-Path $d) {
-            Write-Host "Restoring write permission for $d and contents..."
-            $pattern = "$d\*"
-            $cmd = "attrib -R `"$pattern`" /S /D"
-            cmd /c $cmd
-            Write-Host "Write restored for $d."
-        } else {
-            Write-Host "Directory $d non trovata, salto."
-        }
-    }
-
-    git pull
-    Write-Host "Repository updated successfully!"
-    Write-Host "Building project..."
-    npm run build 2>&1
-    Write-Host "Build completed successfully!"
-
-    # Rendere build e src read-only (ricorsivamente) dopo il build
-    foreach ($d in @("build","src")) {
-        if (Test-Path $d) {
-            Write-Host "Setting $d and contents to read-only..."
-            $pattern = "$d\*"
-            $cmd = "attrib +R `"$pattern`" /S /D"
-            cmd /c $cmd
-            Write-Host "Permissions for $d set to read-only."
-        } else {
-            Write-Host "Directory $d non trovata, salto."
-        }
-    }
-}
-else {
-    # Clone the repository if not exists
-    Write-Host "Cloning repository..."
-    git clone https://github.com/franturino/mcp_server_toolkit.git
-    Write-Host "Repository cloned successfully!"
-    
-    # Navigate into the cloned repository and run npm commands
-    Set-Location -Path "mcp_server_toolkit"
-    Write-Host "Current directory: $PWD"
-    
-    Write-Host "Installing dependencies..."
-    npm install 2>&1
-    Write-Host "Dependencies installed successfully!"
-    
-    Write-Host "Building project..."
-    npm run build 2>&1
-    Write-Host "Build completed successfully!"
-
-    # Rendere build e src read-only (ricorsivamente)
-    foreach ($d in @("build","src")) {
-        if (Test-Path $d) {
-            Write-Host "Setting $d and contents to read-only..."
-            $pattern = "$d\*"
-            $cmd = "attrib +R `"$pattern`" /S /D"
-            cmd /c $cmd
-            Write-Host "Permissions for $d set to read-only."
-        } else {
-            Write-Host "Directory $d non trovata, salto."
-        }
-    }
-    
-    # Navigate to settings directory
-    Set-Location -Path "$env:APPDATA\Code\User\globalStorage\salesforce.salesforcedx-einstein-gpt\settings"
-    Write-Host "Changed to settings directory: $PWD"
-
-    # Add mcp_server_toolkit configuration to a4d_mcp_settings.json
-    Write-Host "Updating a4d_mcp_settings.json..."
-    $settingsJson = Get-Content "a4d_mcp_settings.json" | ConvertFrom-Json
-    
-    if (-not $settingsJson.mcpServers) {
-        $settingsJson | Add-Member -Name "mcpServers" -Value @{} -MemberType NoteProperty
-    }
-    
-    $settingsJson.mcpServers | Add-Member -Name "mcp_server_toolkit" -Value @{
-        disabled = $false
-        timeout = 600
-        type = "stdio"
-        command = "node"
-        args = @(
-            "$mcpPath\mcp_server_toolkit\build\index.js"
-        )
-    } -MemberType NoteProperty
-
-    $settingsJson | ConvertTo-Json -Depth 10 | Set-Content "a4d_mcp_settings.json"
-    Write-Host "Updated a4d_mcp_settings.json successfully!"
+if (Test-Path $RepoName) {
+    Write-Host "Found partial installation '$RepoName'. Cleaning up..."
+    Set-DirectoryWriteable -Path $RepoName # Rimuovi sola lettura prima di eliminare
+    Remove-Item -Path $RepoName -Recurse -Force
+    Write-Host "Cleanup complete."
 }
 
-Write-Host "Setup script completed at $(Get-Date)"
+# --- 3. Clone e Build ---
+Write-Host "Cloning repository..."
+git clone https://github.com/franturino/mcp_server_toolkit.git
+Write-Host "Repository cloned successfully!"
+
+Set-Location $RepoPath
+Write-Host "Current directory: $PWD"
+
+Write-Host "Installing dependencies..."
+npm install
+Write-Host "Dependencies installed successfully!"
+
+Write-Host "Building project..."
+npm run build
+Write-Host "Build completed successfully!"
+
+# --- 4. Imposta Permessi Read-Only ---
+Set-DirectoryReadOnly -Path "build"
+Set-DirectoryReadOnly -Path "src"
+
+# --- 5. Aggiornamento Configurazione JSON ---
+New-Item -Path $SettingsDir -ItemType Directory -Force | Out-Null
+Set-Location $SettingsDir
+Write-Host "Changed to settings directory: $PWD"
+
+# Assicura che il file esista e abbia una struttura base
+if (!(Test-Path $SettingsFile)) {
+    @{ mcpServers = @{} } | ConvertTo-Json | Set-Content $SettingsFile -Encoding UTF8
+}
+
+Write-Host "Updating $SettingsFile..."
+$SettingsJson = Get-Content $SettingsFile -Raw | ConvertFrom-Json
+
+# Crea il nuovo oggetto da aggiungere
+$NewServerEntry = @{
+    disabled = $false
+    timeout  = 600
+    type     = "stdio"
+    command  = "node"
+    args     = @(
+        (Join-Path $RepoPath "build\index.js") # PowerShell usa '\'
+    )
+}
+
+# Aggiungi il nuovo server (sovrascrive se esiste)
+$SettingsJson.mcpServers.mcp_server_toolkit = $NewServerEntry
+
+# Salva il file JSON
+$SettingsJson | ConvertTo-Json -Depth 10 | Set-Content $SettingsFile -Encoding UTF8
+Write-Host "Updated $SettingsFile successfully!"
+
+# --- 6. Schedulazione (Task Scheduler) ---
+Write-Host "---"
+Write-Host "Configuring scheduled tasks..."
+
+# Controllo privilegi amministrativi
+$currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())
+if (-not $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Warning "Script non eseguito come Amministratore."
+    Write-Warning "Impossibile configurare le attività pianificate. Esegui questo script come Amministratore."
+    Stop-Transcript
+    exit 1
+}
+
+# Impostazioni comuni
+$TaskUser = "NT AUTHORITY\SYSTEM" # Esegue come 'root' (SYSTEM)
+$TaskLogon = "S4U" # Esegui anche se l'utente non è loggato
+$Trigger1 = New-ScheduledTaskTrigger -At 5:00 -Daily
+$Trigger2 = New-ScheduledTaskTrigger -At 23:00 -Daily
+
+# --- Job 1: Script di aggiornamento mcp_server_toolkit ---
+$TaskName1 = "MCP_Server_Toolkit_Update"
+Write-Host "Configuring task: $TaskName1..."
+$Action1 = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -File `"$UpdateScriptPath`""
+
+if (!(Get-ScheduledTask -TaskName $TaskName1 -ErrorAction SilentlyContinue)) {
+    Register-ScheduledTask -TaskName $TaskName1 -Action $Action1 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon -Force
+    Write-Host "Task $TaskName1 creato."
+} else {
+    Write-Host "Task $TaskName1 già esistente. Salto."
+}
+
+# --- Job 2: git pull per mcp-server-setup ---
+$TaskName2 = "MCP_Server_Setup_Pull"
+Write-Host "Configuring task: $TaskName2..."
+# Il comando 'git pull' viene eseguito nella directory specificata
+$Action2 = New-ScheduledTaskAction -Execute "git.exe" -Argument "pull" -WorkingDirectory $GitPullDir
+
+if (!(Get-ScheduledTask -TaskName $TaskName2 -ErrorAction SilentlyContinue)) {
+    Register-ScheduledTask -TaskName $TaskName2 -Action $Action2 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon -Force
+    Write-Host "Task $TaskName2 creato."
+} else {
+    Write-Host "Task $TaskName2 già esistente. Salto."
+}
+
+Write-Host "---"
+Write-Host "INSTALLATION SCRIPT COMPLETED at $(Get-Date)"
 Stop-Transcript
