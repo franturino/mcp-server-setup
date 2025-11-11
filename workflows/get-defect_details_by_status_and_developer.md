@@ -1,40 +1,34 @@
-# Recupera Defect per Sviluppatore
+# Workflow: Recupera Defect per Sviluppatore (con richiesta condizionale)
 
-input_variables:
-  - developer_name
-  - defect_states_input
+# 1. Verifica se il nome dello sviluppatore è già disponibile
+- @(ask_developer_name)[max=1]: Il parametro "developer_name" è assente? (Se 'yes', chiedi il nome)
+- <input>[(developer_name)]: Inserisci il nome dello sviluppatore
 
-1. if: "{{!developer_name}}"
-   then:
-     ask_followup_question: "Inserisci il nome dello sviluppatore:"
-     save_as: developer_name
+# 2. Verifica se gli stati dei defect sono già disponibili
+- @(ask_defect_states)[max=1]: Il parametro "defect_states_input" è assente? (Se 'yes', chiedi gli stati)
+- <input>[(defect_states_input)]: Inserisci uno o più stati dei defect separati da virgola
 
-2. if: "{{!defect_states_input}}"
-   then:
-     ask_followup_question: "Inserisci uno o più stati dei defect separati da virgola:"
-     save_as: defect_states_input
+# 3. Definisci gli stati validi
+- <command>[(valid_states)]: echo '["New", "Re-opened", "Sospeso", "Need More Information", "Non Deployabile", "Fix in Process", "Ready to Test", "In Deployment", "Deploy PREPROD", "Ready to test - NEW INTEGRA", "Deploy SUPPORT", "Ready to test - PREPROD", "Ready to test - SUPPORT", "Closed - End of life", "Closed - Duplicate", "Closed - Rejected", "Closed - Resolved", "Not a Defect", "Deploy PROD"]'
 
-3. set_variable:
-   name: valid_states
-   value: ["New", "Re-opened", "Sospeso", "Need More Information", "Non Deployabile", "Fix in Process", "Ready to Test", "In Deployment", "Deploy PREPROD", "Ready to test - NEW INTEGRA", "Deploy SUPPORT", "Ready to test - PREPROD", "Ready to test - SUPPORT", "Closed - End of life", "Closed - Duplicate", "Closed - Rejected", "Closed - Resolved", "Not a Defect", "Deploy PROD"]
+# 4. Normalizza gli stati inseriti
+- <command>[(defect_states)]: echo "{{defect_states_input.split(',').map(s => s.trim())}}"
 
-4. set_variable:
-   name: defect_states
-   value: "{{defect_states_input.split(',').map(s => s.trim())}}"
+# 5. Verifica se ci sono stati non validi
+- <command>[(invalid_states)]: echo "{{defect_states.filter(s => !valid_states.includes(s))}}"
 
-5. set_variable:
-   name: invalid_states
-   value: "{{defect_states.filter(s => !valid_states.includes(s))}}"
+# 6. Controllo finale sugli stati
+- @(invalid_states_check)[max=1]: Ci sono stati non validi? (Se 'yes', salta a invalid_states_block)
 
-6. if: "{{invalid_states.length > 0}}"
-   then:
-     say: "⚠️ Gli stati seguenti non sono validi: {{invalid_states.join(', ')}}. Inserisci solo stati tra quelli consentiti."
-   else:
-     new_task:
-       name: "Recupera defect per {{developer_name}}"
-       description: "Recupera i Defect assegnati allo sviluppatore {{developer_name}} filtrati per stato {{defect_states.join(', ')}} invocando il server MCP 'mcp_server_toolkit'"
-       tool: mcp_server_toolkit
-       parameters:
-         method: "getDefectsByDeveloperAndStatus"
-         developer: "{{developer_name}}"
-         statuses: "{{defect_states}}"
+# 7. Esecuzione della query se tutto è valido
+- <output>: Recupero i defect per {{developer_name}} con stati: {{defect_states.join(', ')}}
+- <tool>: mcp_server_toolkit
+  method: getDefectsByDeveloperAndStatus
+  developer: {{developer_name}}
+  statuses: {{defect_states}}
+
+# 8. Fine
+- <output>: Query completata.
+
+# 9. Blocco alternativo per stati non validi
+- (invalid_states_block)<output>: ⚠️ Gli stati seguenti non sono validi: {{invalid_states.join(', ')}}. Inserisci solo stati tra quelli consentiti: {{valid_states.join(', ')}}

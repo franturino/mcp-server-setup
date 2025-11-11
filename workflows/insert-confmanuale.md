@@ -1,24 +1,19 @@
-# Inserisci Configurazione Manuale
+# Workflow: Inserisci Configurazione Manuale su Salesforce
 
-input_variables:
-  - defect_code
-  - config_note
+# 1. Verifica se defect_code è già presente
+- @(ask_defect_code)[max=1]: Il codice del defect non è stato fornito? (Se 'yes', chiedi defect_code)
+- <input>[(defect_code)]: Inserisci il codice del defect (es. D-123)
 
-1. if: "{{!defect_code}}"
-   then:
-     ask_followup_question: "Inserisci il codice del defect (es. D-123):"
-     save_as: defect_code
+# 2. Verifica se config_note è già presente
+- @(ask_config_note)[max=1]: La nota di configurazione non è stata fornita? (Se 'yes', chiedi config_note)
+- <input>[(config_note)]: Inserisci la nota da associare alla configurazione manuale
 
-2. if: "{{!config_note}}"
-   then:
-     ask_followup_question: "Inserisci la nota da associare alla configurazione manuale:"
-     save_as: config_note
+# 3. Esegui il task di configurazione manuale
+- <output>: Inserisco configurazione manuale per il defect {{defect_code}} con nota "{{config_note}}"
+- <tool>: mcp_server_toolkit
+  method: insertManualConfiguration
+  defectId: {{defect_code}}
+  note: {{config_note}}
 
-3. new_task:
-   name: "Inserisci configurazione manuale per {{defect_code}}"
-   description: "Inserisci Configurazione Manuale su Salesforce usando il server MCP 'mcp_server_toolkit' associato al defect {{defect_code}} con la nota '{{config_note}}'"
-   tool: mcp_server_toolkit
-   parameters:
-     method: "insertManualConfiguration"
-     defectId: "{{defect_code}}"
-     note: "{{config_note}}"
+# 4. Fine
+- <output>: Configurazione manuale completata.
