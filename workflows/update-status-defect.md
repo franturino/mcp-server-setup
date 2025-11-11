@@ -1,29 +1,21 @@
-# Workflow: Aggiorna Stato Defect con Validazione
+# Workflow: Aggiorna Stato Defect su Salesforce
 
-# 1. Verifica se defect_code è già stato fornito
-- @(ask_defect_code)[max=1]: Il codice del defect non è stato fornito? (Se 'yes', chiedi defect_code)
-- <input>[(defect_code)]: Inserisci il codice del defect da aggiornare (es. D-123)
+# 1. Chiedi defectId se non è stato fornito
+- <input>[(defectId)]: Inserisci il defectId (lascia vuoto se vuoi usare il defectName)
 
-# 2. Verifica se defect_status è già stato fornito
-- @(ask_defect_status)[max=1]: Lo stato del defect non è stato fornito? (Se 'yes', chiedi defect_status)
-- <input>[(defect_status)]: Inserisci lo stato da assegnare al defect
+# 2. Chiedi defectName solo se defectId è vuoto
+- @(ask_defectName)[max=1]: Il valore di 'defectId' è vuoto? (Se 'yes', chiedi defectName)
+- (ask_defectName)<input>[(defectName)]: Inserisci il defectName (lascia vuoto se hai già fornito defectId)
 
-# 3. Definisci gli stati validi
-- <command>[(valid_states)]: echo '["New", "Re-opened", "Sospeso", "Need More Information", "Non Deployabile", "Fix in Process", "Ready to Test", "In Deployment", "Deploy PREPROD", "Ready to test - NEW INTEGRA", "Deploy SUPPORT", "Ready to test - PREPROD", "Ready to test - SUPPORT", "Closed - End of life", "Closed - Duplicate", "Closed - Rejected", "Closed - Resolved", "Not a Defect", "Deploy PROD"]'
+# 3. Chiedi lo stato da applicare
+- <input>[(stato)]: Inserisci lo stato da applicare al Defect (es. "Ready to Test")
 
-# 4. Verifica se defect_status è tra gli stati validi
-- @(invalid_status)[max=1]: Lo stato "{{defect_status}}" non è tra quelli validi? (Se 'yes', salta a invalid_status)
-- <output>: Stato valido. Procedo con l'aggiornamento.
-
-# 5. Esegui aggiornamento stato
-- <output>: Aggiorno lo stato del defect {{defect_code}} a "{{defect_status}}"
+# 4. Esegui il tool con i valori raccolti
 - <tool>: mcp_server_toolkit
-  method: updateDefectStatus
-  defectId: {{defect_code}}
-  status: {{defect_status}}
+          method: update_defect_status_salesforce(
+            defectId=$defectId, 
+            defectName=$defectName, 
+            stato=$stato)
 
-# 6. Fine
-- <output>: Stato aggiornato correttamente.
-
-# 7. Blocco alternativo per stato non valido
-- (invalid_status)<output>: ⚠️ Stato non valido. Inserisci uno stato tra quelli consentiti: {{valid_states}}
+# 5. Mostra il risultato
+- <output>: Stato aggiornato: $response
