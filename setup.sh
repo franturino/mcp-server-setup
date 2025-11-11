@@ -48,9 +48,9 @@ fi
 echo "Copying workflows..."
 if [ -d "workflows" ]; then
     # (Assicuriamoci che la destinazione esista anche al primo avvio)
-    mkdir -p /home/codebuilder/dx-project/.a4rules/workflows/
-    cp workflows/* /home/codebuilder/dx-project/.a4rules/workflows/
-    echo "Copied workflows to /home/codebuilder/dx-project/.a4rules/workflows/"
+    mkdir -p /home/codebuilder/dx-project/.a4drules/workflows/
+    cp workflows/* /home/codebuilder/dx-project/.a4drules/workflows/
+    echo "Copied workflows to /home/codebuilder/dx-project/.a4drules/workflows/"
 else
     echo "Directory 'workflows' non trovata. Salto la copia."
 fi
