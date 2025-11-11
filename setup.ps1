@@ -3,7 +3,6 @@ $ErrorActionPreference = "Stop"
 
 # --- Determina i percorsi assoluti degli script ---
 $ScriptDir = $PSScriptRoot # Directory di questo script
-$UpdateScriptPath = Join-Path $ScriptDir "update.ps1"
 
 # --- Logging ---
 $LogFile = Join-Path $ScriptDir "install_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
@@ -11,12 +10,10 @@ Start-Transcript -Path $LogFile
 
 Write-Host "Starting Installation Script at $(Get-Date)"
 Write-Host "Script directory identified as: $ScriptDir"
-Write-Host "Update script path: $UpdateScriptPath"
 
 # --- ‼️ MODIFICA QUESTI PERCORSI ‼️ ---
 $BaseStoragePath = "C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt" # Esempio di percorso Windows
 $DxProjectPath = "C:\Users\codebuilder\dx-project" # Esempio di percorso progetto
-$GitPullDir = "C:\Users\codebuilder\mcp-server-setup" # Esempio di percorso per il git pull
 # --- Fine percorsi da modificare ---
 
 $McpDir = Join-Path $BaseStoragePath "MCP"
@@ -71,7 +68,7 @@ if ($IsAlreadyInstalled) {
 # --- 1. Copia Workflows ---
 Write-Host "Copying workflows..."
 $WorkflowSource = Join-Path $ScriptDir "workflows\*"
-$WorkflowDest = Join-Path $DxProjectPath ".a4rules\workflows\"
+$WorkflowDest = Join-Path $DxProjectPath ".a4drules\workflows\"
 if (Test-Path $WorkflowSource) {
     # Assicura che la cartella di destinazione esista
     New-Item -Path $WorkflowDest -ItemType Directory -Force | Out-Null
@@ -144,71 +141,8 @@ $SettingsJson.mcpServers.mcp_server_toolkit = $NewServerEntry
 $SettingsJson | ConvertTo-Json -Depth 10 | Set-Content $SettingsFile -Encoding UTF8
 Write-Host "Updated $SettingsFile successfully!"
 
-# --- 6. Schedulazione (Task Scheduler) ---
-Write-Host "---"
-Write-Host "Configuring scheduled tasks..."
-
-# Controllo privilegi amministrativi
-$currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())
-if (-not $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Warning "Script non eseguito come Amministratore."
-    Write-Warning "Impossibile configurare le attività pianificate. Esegui questo script come Amministratore."
-    Stop-Transcript
-    exit 1
-}
-
-# Impostazioni comuni
-$TaskUser = "NT AUTHORITY\SYSTEM" # Esegue come 'root' (SYSTEM)
-$TaskLogon = "S4U" # Esegui anche se l'utente non è loggato
-$Trigger1 = New-ScheduledTaskTrigger -At 5:00 -Daily
-$Trigger2 = New-ScheduledTaskTrigger -At 23:00 -Daily
-
-# --- Job 1: Script di aggiornamento mcp_server_toolkit ---
-$TaskName1 = "MCP_Server_Toolkit_Update"
-Write-Host "Configuring task: $TaskName1..."
-$Action1 = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$UpdateScriptPath`""
-
-if (!(Get-ScheduledTask -TaskName $TaskName1 -ErrorAction SilentlyContinue)) {
-    Register-ScheduledTask -TaskName $TaskName1 -Action $Action1 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon -Force
-    Write-Host "Task $TaskName1 creato."
-} else {
-    Write-Host "Task $TaskName1 già esistente. Aggiorno l'azione..."
-    Set-ScheduledTask -TaskName $TaskName1 -Action $Action1 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon
-    Write-Host "Task $TaskName1 updated."
-}
-
-# --- Job 2: git pull per mcp-server-setup E COPIA WORKFLOWS (MODIFICATO) ---
-$TaskName2 = "MCP_Server_Setup_Pull_And_Copy"
-Write-Host "Configuring task: $TaskName2..."
-
-# Definisco i percorsi per il Job 2
-$SourceWfPath = Join-Path $GitPullDir "workflows\*"
-$DestWfPath = Join-Path $DxProjectPath ".a4rules\workflows\"
-
-# Creo il comando completo per PowerShell.
-$CommandString = "Set-Location -Path '$GitPullDir'; git pull; New-Item -Path '$DestWfPath' -ItemType Directory -Force | Out-Null; Copy-Item -Path '$SourceWfPath' -Destination '$DestWfPath' -Recurse -Force"
-
-# L'azione esegue powershell.exe con la stringa di comando
-$Action2 = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command `"$CommandString`""
-
-# Controllo se il task con il vecchio nome ("MCP_Server_Setup_Pull") esiste e lo rimuovo
-$OldTaskName2 = "MCP_Server_Setup_Pull"
-if (Get-ScheduledTask -TaskName $OldTaskName2 -ErrorAction SilentlyContinue) {
-    Write-Host "Removing old task: $OldTaskName2"
-    Unregister-ScheduledTask -TaskName $OldTaskName2 -Confirm:$false
-}
-
-# Ora controllo e creo/aggiorno il NUOVO task
-if (!(Get-ScheduledTask -TaskName $TaskName2 -ErrorAction SilentlyContinue)) {
-    Write-Host "Creating task: $TaskName2"
-    Register-ScheduledTask -TaskName $TaskName2 -Action $Action2 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon -Force
-    Write-Host "Task $TaskName2 creato."
-} else {
-    Write-Host "Task $TaskName2 already exists. Updating task..."
-    Set-ScheduledTask -TaskName $TaskName2 -Action $Action2 -Trigger $Trigger1, $Trigger2 -User $TaskUser -LogonType $TaskLogon
-    Write-Host "Task $TaskName2 updated."
-}
 
 Write-Host "---"
 Write-Host "INSTALLATION SCRIPT COMPLETED at $(Get-Date)"
+Write-Host "Per aggiornare in futuro, esegui .\update.ps1"
 Stop-Transcript

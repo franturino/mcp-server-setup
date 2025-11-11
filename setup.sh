@@ -2,10 +2,7 @@
 set -e # Interrompe lo script se un comando fallisce
 
 # --- Determina i percorsi assoluti degli script ---
-# Questo assicura che il cron job punti al percorso corretto,
-# indipendentemente da dove viene lanciato lo script.
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-UPDATE_SCRIPT_PATH="$SCRIPT_DIR/update.sh"
 
 # --- Definizioni dei Percorsi ---
 BASE_STORAGE_PATH="/home/codebuilder/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt"
@@ -21,7 +18,6 @@ exec 1> >(tee -a "$LOG_FILE") 2>&1
 
 echo "Starting Installation Script at $(date)"
 echo "Script directory identified as: $SCRIPT_DIR"
-echo "Update script path: $UPDATE_SCRIPT_PATH"
 
 # --- Funzione Helper per Permessi ---
 set_permissions_readonly() {
@@ -55,7 +51,6 @@ else
     echo "Directory 'workflows' non trovata. Salto la copia."
 fi
 
-
 # --- 2. Navigazione e Pulizia ---
 # (Crea le directory se non esistono)
 mkdir -p "$MCP_DIR"
@@ -70,7 +65,7 @@ if [ -d "$REPO_NAME" ]; then
     echo "Cleanup complete."
 fi
 
-# --- 3. Clone e Build (come utente corrente, es. root) ---
+# --- 3. Clone e Build ---
 echo "Cloning repository..."
 git clone https://github.com/franturino/mcp_server_toolkit.git
 echo "Repository cloned successfully!"
@@ -113,53 +108,6 @@ jq '.mcpServers += {
 
 echo "Updated $SETTINGS_FILE successfully!"
 
-
-# --- 6. Schedulazione Cron Job (come root) ---
-echo "---"
-echo "Configuring cron jobs..."
-
-CRON_FILE="/etc/cron.d/e2scrub_all"
-# Controlla se il file esiste (il path /etc/cron.d richiede root)
-#touch "$CRON_FILE"
-
-# --- Job 1: Script di aggiornamento mcp_server_toolkit ---
-echo "Configuring cron job for $UPDATE_SCRIPT_PATH..."
-# Rendi lo script di aggiornamento eseguibile
-chmod +x "$UPDATE_SCRIPT_PATH"
-echo "Made $UPDATE_SCRIPT_PATH executable."
-
-CRON_JOB_ENTRY_UPDATE="0 5,23 * * * root $UPDATE_SCRIPT_PATH"
-
-# Controlla se il job 1 è GIA' presente
-if grep -qF "$UPDATE_SCRIPT_PATH" "$CRON_FILE"; then
-    echo "Cron job for $UPDATE_SCRIPT_PATH already exists in $CRON_FILE. Skipping."
-else
-    echo "Adding update script cron job to $CRON_FILE..."
-    echo "" >> "$CRON_FILE"
-    echo "$CRON_JOB_ENTRY_UPDATE" >> "$CRON_FILE"
-    echo "Update script cron job added successfully."
-fi
-
-# --- Job 2: git pull per mcp-server-setup E COPIA WORKFLOWS ---
-echo "Configuring cron job for mcp-server-setup git pull and workflow copy..."
-GIT_PULL_DIR="/home/codebuilder/mcp-server-setup/"
-SOURCE_WF="/home/codebuilder/mcp-server-setup/workflows"
-DEST_WF="/home/codebuilder/dx-project/.a4rules/workflows/"
-
-# (Redirigo output a /dev/null per evitare email da cron)
-# (Il comando esegue cd, git pull, crea la dir di destinazione e copia i file)
-CRON_JOB_COMMAND="(cd ${GIT_PULL_DIR} && git pull && mkdir -p ${DEST_WF} && cp ${SOURCE_WF}/* ${DEST_WF}) > /dev/null 2>&1"
-CRON_JOB_ENTRY_GIT="0 5,23 * * * root ${CRON_JOB_COMMAND}"
-
-# Controlla se il job 2 (identificato dalla copia dei workflow) è GIA' presente
-if grep -qF "cp ${SOURCE_WF}/* ${DEST_WF}" "$CRON_FILE"; then
-    echo "Cron job for $GIT_PULL_DIR git pull and workflow copy already exists in $CRON_FILE. Skipping."
-else
-    echo "Adding mcp-server-setup git pull/copy cron job to $CRON_FILE..."
-    echo "" >> "$CRON_FILE"
-    echo "$CRON_JOB_ENTRY_GIT" >> "$CRON_FILE"
-    echo "mcp-server-setup git pull/copy cron job added successfully."
-fi
-
 echo "---"
 echo "INSTALLATION SCRIPT COMPLETED at $(date)"
+echo "Per aggiornare in futuro, esegui ./update.sh"
