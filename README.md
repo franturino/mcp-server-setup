@@ -1,11 +1,11 @@
-# Installation Guide
+# 🚀 MCP Server Toolkit - Installation & Usage Guide
 
-This guide explains how to install and set up the MCP Server Toolkit for Salesforce.
+This guide explains how to install and set up the **MCP Server Toolkit** for Salesforce development. Choose the automated installation for your operating system for the easiest setup experience.
 
 ## 📋 Table of Contents
 
 1. **[Prerequisites](#prerequisites)** - System requirements
-2. **[Initial Setup](#initial-setup)** - Getting started
+2. **[Quick Start](#quick-start)** - Get started in 2 minutes
 3. **[Installation Scripts](#installation-scripts)** - Automated setup (Recommended)
    - [Windows (PowerShell)](#windows-installation-powershell)
    - [Unix/Linux (Bash)](#unixlinux-installation-bash)
@@ -14,20 +14,69 @@ This guide explains how to install and set up the MCP Server Toolkit for Salesfo
 6. **[File Permission Management](#file-permission-management)** - Security and updates
 7. **[JSON Configuration](#json-configuration-details)** - Server settings explained
 8. **[Troubleshooting](#troubleshooting)** - Common issues and solutions
-9. **[Workflows](#workflows-overview)** - Available automation workflows
+9. **[Available Workflows](#available-workflows)** - Automation tools included
 
 ---
 
 ## Prerequisites
 
-- Node.js and npm installed
-- Git installed
-- Visual Studio Code or Salesforce Code Builder
-- Windows (for PowerShell script) or Linux/Unix (for Bash script)
+Before starting, ensure you have:
+
+- ✅ **Node.js** and **npm** installed ([download](https://nodejs.org/))
+- ✅ **Git** installed ([download](https://git-scm.com/))
+- ✅ **Visual Studio Code** or **Salesforce Code Builder**
+- ✅ **Windows (PowerShell)** or **Linux/Unix (Bash)** terminal access
+- ✅ Write permissions in your user directory
+
+---
+
+## Quick Start
+
+### ⚡ Windows (PowerShell)
+
+```powershell
+# 1. Clone the setup repository
+git clone https://github.com/franturino/mcp-server-setup.git
+cd mcp-server-setup
+
+# 2. Edit setup.ps1 - Update these variables:
+#    - $BaseStoragePath: Your VS Code Server storage path
+#    - $DxProjectPath: Your Salesforce dx-project path
+
+# 3. Open PowerShell as Administrator and run:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\setup.ps1
+
+# 4. Wait for completion and check the log file
+# Success! The MCP server is now installed and configured.
+```
+
+### ⚡ Unix/Linux (Bash)
+
+```bash
+# 1. Clone the setup repository
+git clone https://github.com/franturino/mcp-server-setup.git
+cd mcp-server-setup
+
+# 2. Edit setup.sh - Update these variables:
+#    - BASE_STORAGE_PATH: Your Code Server storage path
+#    - DX_PROJECT_PATH (if needed): Your Salesforce dx-project path
+
+# 3. Make scripts executable
+chmod +x setup.sh update.sh
+
+# 4. Run setup
+./setup.sh
+
+# 5. Wait for completion and check the log file
+# Success! The MCP server is now installed and configured.
+```
+
+---
 
 ## Initial Setup
 
-1. Open your terminal (PowerShell on Windows, or Code Builder terminal on Unix)
+1. Open your terminal (PowerShell on Windows, or Bash on Unix/Linux)
 2. Clone the setup repository:
 ```bash
 git clone https://github.com/franturino/mcp-server-setup.git
@@ -40,195 +89,252 @@ cd mcp-server-setup
 **⚠️ Important**: Before running the installation scripts, ensure that:
 - Git is installed and accessible from your terminal
 - Node.js and npm are installed
-- You have the necessary permissions to create directories in the storage path
-- (Windows only) PowerShell is running with Administrator privileges
+- You have write permissions for creating directories in the storage path
+- (Windows only) PowerShell is running with Administrator privileges (required for scheduled tasks)
 
 ## Installation Scripts
 
 ### Windows Installation (PowerShell)
 
-The `setup.ps1` script automates the installation process in Windows environments:
+The `setup.ps1` script automates the entire installation process for Windows environments.
 
-#### What the Script Does
+#### 📋 What the Script Does
 
-1. **Creates a log file** with timestamp for tracking installation progress
-   - Format: `install_YYYYMMDD_HHMMSS.log`
-2. **Pre-Installation Checks**:
-   - Checks if `mcp_server_toolkit` is already configured in `a4d_mcp_settings.json`
-   - If found, exits with an alert to run `update.ps1` instead
-3. **Workflows Directory Setup**:
-   - Copies workflows from the `workflows/` directory to your dx-project
-4. **Repository Management**:
-   - Cleans up any partial installations
-   - Clones the `mcp_server_toolkit` repository
-   - Installs npm dependencies
-   - Builds the project
-5. **Permission Management**:
-   - Sets directories to read-only for protection
-6. **Configuration**:
-   - Creates/updates `a4d_mcp_settings.json` with MCP server settings
-7. **Scheduled Tasks**:
-   - Creates two scheduled tasks:
-     - **MCP_Server_Toolkit_Update**: Runs `update.ps1` at 5:00 AM and 11:00 PM daily
-     - **MCP_Server_Setup_Pull_And_Copy**: Pulls latest workflows and copies them at 5:00 AM and 11:00 PM daily
+| Step | Action |
+|------|--------|
+| 1️⃣ **Pre-Check** | Verifies that `mcp_server_toolkit` isn't already installed |
+| 2️⃣ **Workflows Copy** | Copies workflow files to your dx-project `.a4drules/workflows/` directory |
+| 3️⃣ **Repository Clone** | Clones the MCP server toolkit from GitHub |
+| 4️⃣ **Dependencies** | Installs npm packages (`npm install`) |
+| 5️⃣ **Build** | Compiles TypeScript to JavaScript (`npm run build`) |
+| 6️⃣ **Read-Only Protection** | Sets `build/` and `src/` directories to read-only for safety |
+| 7️⃣ **Configuration** | Updates `a4d_mcp_settings.json` with server settings |
+| 8️⃣ **Logging** | Creates detailed log file for troubleshooting |
 
-#### Running the PowerShell Script
+#### ⚙️ Configuration Before Installation
 
-1. **Open PowerShell as Administrator**
-   - This is required for setting up scheduled tasks
-2. **Enable script execution** (if not already enabled):
+Edit `setup.ps1` and modify these variables:
+
 ```powershell
+$BaseStoragePath = "C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt"
+$DxProjectPath = "C:\Users\codebuilder\dx-project"
+```
+
+Replace with your actual paths:
+- **$BaseStoragePath**: Path to VS Code Server storage (check in VS Code settings)
+- **$DxProjectPath**: Path to your Salesforce dx-project directory
+
+#### 🚀 Running the PowerShell Script
+
+```powershell
+# 1. Open PowerShell as Administrator (required for scheduler permissions)
+#    Right-click PowerShell → Run as Administrator
+
+# 2. Enable script execution (if not already enabled)
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-3. **Modify paths in the script** (if needed):
-   - Edit `setup.ps1` and update these variables:
-     - `$BaseStoragePath`: Path to VS Code Server storage
-     - `$DxProjectPath`: Path to your dx-project directory
-     - `$GitPullDir`: Path to the mcp-server-setup repository
-4. **Run the script**:
-```powershell
+
+# 3. Navigate to the setup directory
+cd C:\path\to\mcp-server-setup
+
+# 4. Run the installation
 .\setup.ps1
-```
-5. **Check the log file** for any errors or warnings
 
-### Unix/Linux Installation (Bash)
-
-The `setup.sh` script automates the installation process. Here's what it does:
-
-#### What the Script Does
-
-1. **Creates a log file** with timestamp for tracking installation progress
-   - Format: `install_YYYYMMDD_HHMMSS.log`
-2. **Pre-Installation Checks**:
-   - Checks if `mcp_server_toolkit` is already configured in `a4d_mcp_settings.json`
-   - If found, exits with an alert to run `update.sh` instead
-3. **Workflows Directory Setup**:
-   - Copies workflows from the `workflows/` directory to your dx-project
-4. **Repository Management**:
-   - Creates necessary directories if they don't exist
-   - Cleans up any partial installations
-   - Clones the `mcp_server_toolkit` repository
-   - Installs npm dependencies
-   - Builds the project
-5. **Configuration**:
-   - Creates/updates `a4d_mcp_settings.json` with MCP server settings
-6. **Scheduled Jobs**:
-   - Creates two cron jobs that run at 5:00 AM and 11:00 PM daily:
-     - **Update job**: Runs `update.sh` to pull latest changes and rebuild
-     - **Workflow sync job**: Pulls latest workflows and copies them to dx-project
-
-#### Running the Script
-
-1. **Make the script executable**:
-```bash
-chmod +x setup.sh
-```
-2. **Modify paths in the script** (if needed):
-   - Edit `setup.sh` and update these variables if using different paths:
-     - `BASE_STORAGE_PATH`: Path to Code Server storage
-     - Default: `/home/codebuilder/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt`
-3. **Run the script**:
-```bash
-./setup.sh
-```
-   - For cron job configuration, you may need to run with `sudo`:
-```bash
-sudo ./setup.sh
-```
-4. **Check the log file** for any errors or warnings
-
-### Logging
-
-Both scripts create detailed log files in the format:
-```
-setup_YYYYMMDD_HHMMSS.log  # Initial installation
-update_YYYYMMDD_HHMMSS.log # Updates
+# 5. Monitor the output - wait for "INSTALLATION SCRIPT COMPLETED"
 ```
 
-These logs contain:
-- All installation/update steps
-- Command outputs
-- Errors and warnings
-- Timestamps for each action
+#### 📊 What Gets Created
 
-**Tip**: Check the log file if the script fails or behaves unexpectedly.
+After successful installation:
 
-## Update Scripts
-
-### Purpose
-
-After the initial installation, the `update.ps1` (Windows) and `update.sh` (Unix/Linux) scripts handle:
-- Pulling the latest changes from the repository
-- Reinstalling dependencies if needed
-- Rebuilding the project
-- Maintaining proper file permissions
-
-### Automatic Updates
-
-The installation scripts configure **automatic updates**:
-- **Windows**: Scheduled tasks run at 5:00 AM and 11:00 PM daily
-- **Unix/Linux**: Cron jobs run at the same times
-
-### Manual Updates
-
-You can also run the update scripts manually:
-
-#### Windows
-```powershell
-.\update.ps1
+```
+$BaseStoragePath/
+├── MCP/
+│   └── mcp_server_toolkit/          ← Cloned repository
+│       ├── build/                   ← Compiled JavaScript (read-only)
+│       ├── src/                     ← TypeScript source (read-only)
+│       ├── package.json
+│       └── ...other files
+└── settings/
+    └── a4d_mcp_settings.json        ← Updated with server config
 ```
 
-#### Unix/Linux
-```bash
-./update.sh
-```
+#### ✅ Verify Installation Success
 
-### Update Script Workflow
-
-1. **Pre-Update Checks**:
-   - Verifies that the installation exists
-   - Checks if configuration is present in `a4d_mcp_settings.json`
-   - Exits if installation not found (must run `setup.sh/ps1` first)
-2. **Permission Management**:
-   - Restores write permissions to `build/` and `src/` directories
-3. **Repository Update**:
-   - Pulls latest changes from GitHub
-   - Installs updated dependencies
-   - Rebuilds the project
-4. **Permission Reset**:
-   - Sets directories back to read-only for protection
-5. **Logging**:
-   - Creates detailed log file with timestamp
+1. Check the **log file** in the script directory (`install_YYYYMMDD_HHMMSS.log`)
+2. Verify `a4d_mcp_settings.json` contains the `mcp_server_toolkit` configuration
+3. Restart VS Code or Code Builder
+4. The MCP server should now be active
 
 ---
 
+### Unix/Linux Installation (Bash)
+
+The `setup.sh` script automates the entire installation process for Unix/Linux environments.
+
+#### 📋 What the Script Does
+
+| Step | Action |
+|------|--------|
+| 1️⃣ **Pre-Check** | Verifies that `mcp_server_toolkit` isn't already installed |
+| 2️⃣ **Workflows Copy** | Copies workflow files to your dx-project `.a4drules/workflows/` directory |
+| 3️⃣ **Repository Clone** | Clones the MCP server toolkit from GitHub |
+| 4️⃣ **Dependencies** | Installs npm packages (`npm install`) |
+| 5️⃣ **Build** | Compiles TypeScript to JavaScript (`npm run build`) |
+| 6️⃣ **Configuration** | Updates `a4d_mcp_settings.json` with server settings |
+| 7️⃣ **Logging** | Creates detailed log file for troubleshooting |
+
+#### ⚙️ Configuration Before Installation
+
+Edit `setup.sh` and verify these variables match your environment:
+
+```bash
+BASE_STORAGE_PATH="/home/codebuilder/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt"
+```
+
+If your Code Server storage is in a different location, update the path accordingly.
+
+#### 🚀 Running the Bash Script
+
+```bash
+# 1. Navigate to the setup directory
+cd /path/to/mcp-server-setup
+
+# 2. Make scripts executable
+chmod +x setup.sh update.sh
+
+# 3. Run the installation
+./setup.sh
+
+# 4. Monitor the output - wait for "INSTALLATION SCRIPT COMPLETED"
+```
+
+#### 📊 What Gets Created
+
+After successful installation:
+
+```
+$BASE_STORAGE_PATH/
+├── MCP/
+│   └── mcp_server_toolkit/          ← Cloned repository
+│       ├── build/                   ← Compiled JavaScript
+│       ├── src/                     ← TypeScript source
+│       ├── package.json
+│       └── ...other files
+└── settings/
+    └── a4d_mcp_settings.json        ← Updated with server config
+```
+
+#### ✅ Verify Installation Success
+
+1. Check the **log file** in the script directory (`install_YYYYMMDD_HHmmss.log`)
+2. Verify `a4d_mcp_settings.json` contains the `mcp_server_toolkit` configuration
+3. Restart VS Code or Code Builder
+4. The MCP server should now be active
+
+## Update Scripts
+
+### 🔄 Purpose
+
+After initial installation, use the `update.ps1` (Windows) or `update.sh` (Unix/Linux) scripts to:
+- ✅ Pull the latest changes from GitHub
+- ✅ Reinstall/update npm dependencies
+- ✅ Rebuild the project with new code
+- ✅ Maintain file permissions automatically
+
+### 📋 Update Script Workflow
+
+#### Pre-Update Checks
+```
+1. Verifies installation exists at $REPO_PATH
+2. Checks if mcp_server_toolkit is configured in a4d_mcp_settings.json
+3. Exits with error if installation not found (must run setup.ps1/sh first)
+```
+
+#### Update Process
+```
+1. Restores write permissions to build/ and src/ directories
+2. Pulls latest changes from GitHub (git pull)
+3. Installs/updates npm dependencies (npm install)
+4. Rebuilds the project (npm run build)
+5. Resets directories to read-only for protection
+6. Creates timestamped log file with all details
+```
+
+### 🚀 Running the Update Scripts
+
+#### Windows (PowerShell)
+```powershell
+# Open PowerShell and run:
+cd C:\path\to\mcp-server-setup
+.\update.ps1
+
+# Check the log file for completion:
+# update_YYYYMMDD_HHMMSS.log
+```
+
+#### Unix/Linux (Bash)
+```bash
+# Navigate and run:
+cd /path/to/mcp-server-setup
+./update.sh
+
+# Check the log file for completion:
+# update_YYYYMMDD_HHmmss.log
+```
+
+### 📅 Automatic Updates
+
+The scripts do **NOT** automatically configure scheduled tasks or cron jobs. Manual updates are required:
+
+**Why this design?**
+- More control over when updates occur
+- Avoids conflicts with active development
+- Predictable behavior without background tasks
+- Simpler troubleshooting
+
+**Recommendation**: Schedule updates manually using your system's task scheduler or set reminder to run update scripts periodically.
+
 ## Manual Installation
 
-If you prefer to install manually, follow these steps:
+If you prefer to install manually without scripts, or need to troubleshoot, follow these step-by-step instructions:
 
-### Windows
-1. Navigate to the MCP directory:
-```powershell
-cd $env:APPDATA\Code\User\globalStorage\salesforce.salesforcedx-einstein-gpt\MCP
-```
+### Windows (Manual Steps)
 
-2. Clone the repository:
+#### Step 1: Clone the Repository
 ```powershell
+# Navigate to your MCP directory
+$McpPath = "C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt\MCP"
+New-Item -Path $McpPath -ItemType Directory -Force | Out-Null
+Set-Location $McpPath
+
+# Clone the repository
 git clone https://github.com/franturino/mcp_server_toolkit.git
+cd mcp_server_toolkit
 ```
 
-3. Install dependencies:
+#### Step 2: Install Dependencies
 ```powershell
-cd mcp_server_toolkit
 npm install
 ```
 
-4. Build the project:
+#### Step 3: Build the Project
 ```powershell
 npm run build
 ```
 
-5. Configure MCP settings manually by adding the following to `a4d_mcp_settings.json`:
+#### Step 4: Copy Workflows (Optional)
+```powershell
+# Copy workflow files to your dx-project
+Copy-Item -Path "workflows\*" -Destination "C:\Users\codebuilder\dx-project\.a4drules\workflows\" -Recurse -Force
+```
+
+#### Step 5: Configure MCP Settings
+Edit or create `a4d_mcp_settings.json` at:
+```
+C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt\settings\a4d_mcp_settings.json
+```
+
+Add or update with:
 ```json
 {
     "mcpServers": {
@@ -245,29 +351,43 @@ npm run build
 }
 ```
 
-### Unix/Linux
-1. Navigate to the MCP directory:
-```bash
-cd /home/codebuilder/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt/MCP
-```
+### Unix/Linux (Manual Steps)
 
-2. Clone the repository:
+#### Step 1: Clone the Repository
 ```bash
+# Navigate to your MCP directory
+export MCP_PATH="/home/codebuilder/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt/MCP"
+mkdir -p "$MCP_PATH"
+cd "$MCP_PATH"
+
+# Clone the repository
 git clone https://github.com/franturino/mcp_server_toolkit.git
+cd mcp_server_toolkit
 ```
 
-3. Install dependencies:
+#### Step 2: Install Dependencies
 ```bash
-cd mcp_server_toolkit
 npm install
 ```
 
-4. Build the project:
+#### Step 3: Build the Project
 ```bash
 npm run build
 ```
 
-5. Configure MCP settings manually by adding the following to `a4d_mcp_settings.json`:
+#### Step 4: Copy Workflows (Optional)
+```bash
+# Copy workflow files to your dx-project
+cp workflows/* /home/codebuilder/dx-project/.a4drules/workflows/
+```
+
+#### Step 5: Configure MCP Settings
+Edit or create `a4d_mcp_settings.json` at:
+```
+/home/codebuilder/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt/settings/a4d_mcp_settings.json
+```
+
+Add or update with:
 ```json
 {
     "mcpServers": {
@@ -284,148 +404,78 @@ npm run build
 }
 ```
 
-### Workflows Directory
-
-6. (Optional) Copy workflows to your dx-project:
+#### Step 6: Set Read-Only Permissions (Recommended)
 ```bash
-# Windows (PowerShell)
-Copy-Item -Path "workflows\*" -Destination "C:\Users\codebuilder\dx-project\.a4rules\workflows\" -Recurse -Force
-
-# Unix/Linux (Bash)
-cp workflows/* /home/codebuilder/dx-project/.a4rules/workflows/
+chmod -R a-w build src
+find build src -type d -exec chmod a+rx {} +
+find build src -type f -exec chmod a+r {} +
 ```
 
 ---
 
 ## File Permission Management
 
-The scripts implement security through file permissions:
+The scripts implement security through file permissions, automatically managing access to critical files.
 
-### Initial Installation
-- After building, `src/` and `build/` directories are set to **read-only**
-- This prevents accidental modifications to critical files
+### Why File Permissions Matter
 
-### During Updates
-- The `update.ps1`/`update.sh` scripts temporarily restore **write permissions**
-- After rebuilding, permissions are reset to **read-only**
-- This ensures a safe update process
+After building the project, the `src/` and `build/` directories are important:
+- **They contain compiled and source code** that shouldn't be accidentally modified
+- **Read-only protection prevents accidental changes** during normal development
+- **Updates need temporary write access** to pull and rebuild new code
+
+### Permission Workflow
+
+#### ✅ Initial Installation
+1. Build completes successfully
+2. Directories **set to read-only** automatically
+3. Protects against accidental modifications
+
+#### 🔄 During Updates
+1. `update.ps1`/`update.sh` restores **write permissions**
+2. Pulls latest changes and rebuilds
+3. Automatically resets to **read-only** when done
+4. Transparent to the user - happens automatically!
 
 ### Manual Permission Changes
-If you need to modify files:
 
-**Windows (PowerShell)**:
+If needed, you can change permissions manually:
+
+#### Windows (PowerShell)
+
 ```powershell
-# Make writeable
-Get-ChildItem -Path "path\to\dir" -Recurse | Set-ItemProperty -Name IsReadOnly -Value $false
+# Make writeable (to edit files)
+Get-ChildItem -Path "C:\path\to\build" -Recurse | Set-ItemProperty -Name IsReadOnly -Value $false
 
-# Make read-only
-Get-ChildItem -Path "path\to\dir" -Recurse | Set-ItemProperty -Name IsReadOnly -Value $true
+# Make read-only (for protection)
+Get-ChildItem -Path "C:\path\to\build" -Recurse | Set-ItemProperty -Name IsReadOnly -Value $true
 ```
 
-**Unix/Linux (Bash)**:
-```bash
-# Make writeable
-chmod -R a+w /path/to/dir
+#### Unix/Linux (Bash)
 
-# Make read-only
-chmod -R a-w /path/to/dir
-find /path/to/dir -type d -exec chmod a+rx {} +
-find /path/to/dir -type f -exec chmod a+r {} +
+```bash
+# Make writeable (to edit files)
+chmod -R a+w /path/to/build
+
+# Make read-only (for protection)
+chmod -R a-w /path/to/build
+find /path/to/build -type d -exec chmod a+rx {} +
+find /path/to/build -type f -exec chmod a+r {} +
 ```
 
 ---
 
 ## JSON Configuration Details
 
-The scripts automatically update the `a4d_mcp_settings.json` file with the correct configuration for the MCP server. Here's what's configured:
+After installation, the MCP server is configured in your VS Code settings via the `a4d_mcp_settings.json` file.
+
+### Configuration Location
+
+- **Windows**: `C:\Users\<username>\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt\settings\a4d_mcp_settings.json`
+- **Unix/Linux**: `/home/<username>/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt/settings/a4d_mcp_settings.json`
 
 ### Configuration Structure
-```json
-{
-    "mcpServers": {
-        "mcp_server_toolkit": {
-            "disabled": false,           // Enable the server
-            "timeout": 600,              // 10 minutes timeout
-            "type": "stdio",             // Communication type
-            "command": "node",           // Runtime
-            "args": [                    // Path to the server
-                "...path to build/index.js..."
-            ]
-        }
-    }
-}
-```
 
-### Key Settings
-- **disabled**: Set to `false` to enable the server
-- **timeout**: 600 seconds (10 minutes) for MCP operations
-- **type**: "stdio" for standard input/output communication
-- **command**: "node" to run with Node.js
-- **args**: Absolute path to the built server entry point
-
----
-
-## Troubleshooting
-
-### Installation Checks
-- The scripts verify that the installation hasn't been done before
-- If you see "Installation already completed" message, run `update.ps1` or `update.sh` instead
-- Check log files for detailed error messages
-
-### Common Issues
-
-#### PowerShell Execution Policy Error
-```
-cannot be loaded because running scripts is disabled
-```
-**Solution**: Run this command in PowerShell as Administrator:
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-#### Permission Denied (Unix/Linux)
-```
-Permission denied: ./setup.sh
-```
-**Solution**: Make the script executable:
-```bash
-chmod +x setup.sh update.sh
-```
-
-#### Git Not Found
-- Ensure Git is installed and accessible from terminal
-- Restart terminal after installing Git
-- On Windows, ensure Git is in your PATH
-
-#### npm Install Fails
-- Check internet connectivity
-- Delete `node_modules` folder and `package-lock.json`, then try again
-- Check log file for specific npm errors
-
-#### Scheduled Tasks Not Working (Windows)
-- Verify script ran with Administrator privileges
-- Check Windows Task Scheduler for the tasks:
-  - `MCP_Server_Toolkit_Update`
-  - `MCP_Server_Setup_Pull_And_Copy`
-- View task history for errors
-
-#### Cron Jobs Not Working (Unix/Linux)
-- Check cron log: `grep CRON /var/log/syslog`
-- Verify script has execute permissions: `ls -l setup.sh update.sh`
-- Ensure cron daemon is running
-- Check that paths in scripts match your environment
-
-### File Permissions
-
-**Read-Only Protection**:
-- After installation, `src/` and `build/` directories are set to read-only
-- The `update.ps1`/`update.sh` scripts automatically restore write permissions before updating
-- This protects important files from accidental modifications
-
-### Verify Installation
-
-1. Check log file for successful completion
-2. Verify `a4d_mcp_settings.json` contains:
 ```json
 {
     "mcpServers": {
@@ -434,152 +484,254 @@ chmod +x setup.sh update.sh
             "timeout": 600,
             "type": "stdio",
             "command": "node",
-            "args": ["...path to build/index.js..."]
+            "args": [
+                "/path/to/mcp_server_toolkit/build/index.js"
+            ]
         }
     }
 }
 ```
-3. (Windows) Check Task Scheduler for scheduled tasks
-4. (Unix/Linux) Verify cron jobs: `crontab -l`
-5. Restart VS Code/Code Builder to load the MCP server
+
+### Configuration Parameters Explained
+
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| `disabled` | `false` | Enables the MCP server (set to `true` to disable) |
+| `timeout` | `600` | Timeout in seconds (10 minutes) for MCP operations |
+| `type` | `"stdio"` | Communication method (standard input/output) |
+| `command` | `"node"` | Runtime executable (Node.js) |
+| `args` | `[...]` | Path to the server entry point (`build/index.js`) |
+
+### Modifying Configuration
+
+If you need to modify the configuration:
+
+1. **Locate the file** using the paths above
+2. **Edit the JSON** with a text editor
+3. **Save the file**
+4. **Restart VS Code or Code Builder** for changes to take effect
+
+⚠️ **Important**: Keep the JSON syntax valid! Invalid JSON will prevent the server from loading.
 
 ---
 
-## Workflows Overview
+## Troubleshooting
 
-The toolkit includes several pre-configured workflows for managing defects and metadata in Salesforce. Each workflow is defined as a Markdown file in the `workflows/` directory and includes built-in validation and error handling.
+### 🔍 Pre-Installation Checks
 
----
+Before running the installation script, verify:
 
-## 🧠 Workflow: Retrieve Defects by Developer
+- [ ] Git is installed: `git --version`
+- [ ] Node.js is installed: `node --version`
+- [ ] npm is installed: `npm --version`
+- [ ] You have write permissions in your user directory
+- [ ] (Windows) PowerShell is running as Administrator
 
-This workflow allows you to retrieve defects assigned to a developer, filtered by one or more specific statuses.
+### ❌ Common Issues and Solutions
 
-### 📥 Input
+#### ✘ "Installation already completed" Error
 
-The workflow accepts two inputs:
+**What it means**: The script detected an existing installation.
 
-- `developer_name`: the name of the developer
-- `defect_states_input`: one or more defect statuses, separated by commas
-
-Valid statuses include:
-
-New, Re-opened, Sospeso, Need More Information, Non Deployabile, Fix in Process,
-Ready to Test, In Deployment, Deploy PREPROD, Ready to test - NEW INTEGRA,
-Deploy SUPPORT, Ready to test - PREPROD, Ready to test - SUPPORT,
-Closed - End of life, Closed - Duplicate, Closed - Rejected, Closed - Resolved,
-Not a Defect, Deploy PROD
-
-### ⚙️ Behavior
-
-- If the inputs are **provided directly in the prompt**, the workflow uses them without asking.
-  - Example:
-    ```
-    /recupera-defect-sviluppatore.md "Mario Rossi" "New,Ready to Test"
-    ```
-- If one or both inputs are **missing**, the workflow will prompt the user interactively.
-- The workflow **validates the provided statuses**:
-  - If one or more statuses are invalid, it displays an error message.
-  - If all statuses are valid, it invokes the MCP server `mcp_server_toolkit` using the method `getDefectsByDeveloperAndStatus`.
-
-### 📤 Output
-
-### 📤 Output
-
-The workflow creates a task that returns the metadata records associated with the specified defect. This is useful for tracking, auditing, or validating import configurations.
+**Solutions**:
+- **To update**: Run the update script instead (`update.ps1` or `update.sh`)
+- **To reinstall**: Manually delete the old installation and run setup again
+  ```powershell
+  # Windows
+  Remove-Item -Path "C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt\MCP\mcp_server_toolkit" -Recurse -Force
+  ```
+  ```bash
+  # Unix/Linux
+  rm -rf ~/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt/MCP/mcp_server_toolkit
+  ```
 
 ---
 
-## 🚀 Quick Start Guide
+#### ✘ PowerShell Execution Policy Error
 
-### For Windows Users
-
-```powershell
-# 1. Clone the setup repository
-git clone https://github.com/franturino/mcp-server-setup.git
-cd mcp-server-setup
-
-# 2. Run PowerShell as Administrator
-
-# 3. Execute setup
-.\setup.ps1
-
-# 4. Check the log file for success
-# Logs are in: install_YYYYMMDD_HHMMSS.log
+**Error message**:
+```
+cannot be loaded because running scripts is disabled on this system
 ```
 
-### For Unix/Linux Users
+**Solution**: Enable script execution:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
 
+Then run the setup script again.
+
+---
+
+#### ✘ "Permission denied" Error (Unix/Linux)
+
+**Error message**:
+```
+Permission denied: ./setup.sh
+./setup.sh: command not found
+```
+
+**Solution**: Make the script executable:
 ```bash
-# 1. Clone the setup repository
-git clone https://github.com/franturino/mcp-server-setup.git
-cd mcp-server-setup
-
-# 2. Make scripts executable
 chmod +x setup.sh update.sh
-
-# 3. Execute setup (may require sudo for cron configuration)
-./setup.sh
-
-# 4. Check the log file for success
-# Logs are in: install_YYYYMMDD_HHMMSS.log
 ```
 
-### After Installation
+---
 
-1. Restart VS Code or Salesforce Code Builder
-2. The MCP server `mcp_server_toolkit` should now be active
-3. Workflows are available in your workspace
-4. Check your log file for any warnings
+#### ✘ Git Not Found
 
-### Keep Up to Date
+**Error message**:
+```
+git is not recognized | git: command not found
+```
 
-Updates are automatic via:
-- **Windows**: Scheduled tasks (5:00 AM & 11:00 PM)
-- **Unix/Linux**: Cron jobs (5:00 AM & 11:00 PM)
+**Solutions**:
+1. Install Git from https://git-scm.com/
+2. Restart your terminal
+3. Verify installation: `git --version`
 
-Or run manually:
+On **Windows**, ensure Git is in your system PATH:
+- Right-click on "This PC" → Properties
+- Click "Advanced system settings"
+- Click "Environment Variables"
+- Check that Git's `bin` folder is in the PATH
+
+---
+
+#### ✘ npm Install Fails
+
+**Error message**:
+```
+npm ERR! code E... | npm ERR! 404 | npm ERR! network ...
+```
+
+**Solutions**:
+1. Check internet connectivity
+2. Clear npm cache: `npm cache clean --force`
+3. Delete `node_modules` and `package-lock.json`:
+   ```bash
+   rm -rf node_modules package-lock.json
+   npm install
+   ```
+4. Check npm version: `npm --version` (should be recent)
+
+---
+
+#### ✘ Build Process Fails
+
+**Error message** (during `npm run build`):
+```
+error TS... | Error: Cannot find module 'typescript'
+```
+
+**Solutions**:
+1. Ensure dependencies are installed: `npm install`
+2. Check for TypeScript installation: `npm list typescript`
+3. Try rebuilding: `npm run build`
+
+---
+
+#### ✘ Settings File Not Found or Invalid JSON
+
+**Error message**:
+```
+File not found: a4d_mcp_settings.json | Invalid JSON | parse error
+```
+
+**Solutions**:
+1. **Verify the file exists** at the correct path (check the setup output)
+2. **If missing**, create it manually with valid JSON:
+   ```json
+   {
+       "mcpServers": {
+           "mcp_server_toolkit": {
+               "disabled": false,
+               "timeout": 600,
+               "type": "stdio",
+               "command": "node",
+               "args": ["...full path to build/index.js..."]
+           }
+       }
+   }
+   ```
+3. **If invalid JSON**, check for:
+   - Missing commas between properties
+   - Unmatched braces or brackets
+   - Incorrect quote types
+4. Use a JSON validator: https://jsonlint.com/
+
+---
+
+#### ✘ MCP Server Not Active in VS Code
+
+**What to check**:
+
+1. **Verify configuration exists**:
+   - Open your `a4d_mcp_settings.json`
+   - Ensure `"disabled": false`
+
+2. **Check the path is correct**:
+   - Verify the path in `args` actually exists
+   - Ensure `build/index.js` is present
+
+3. **Check the output channel**:
+   - Open VS Code Output panel
+   - Select "MCP Server Toolkit" from dropdown
+   - Look for error messages
+
+4. **Restart VS Code**:
+   ```
+   Close VS Code completely and reopen it
+   (not just reload window)
+   ```
+
+5. **Check log files**:
+   - Look for errors in the installation/update log files
+   - These are created in the setup script directory
+
+---
+
+### 📋 Verification Checklist
+
+After installation, verify everything works:
+
+- [ ] Log file shows "INSTALLATION SCRIPT COMPLETED"
+- [ ] `a4d_mcp_settings.json` contains the `mcp_server_toolkit` configuration
+- [ ] `build/build/index.js` file exists and is readable
+- [ ] Directories `build/` and `src/` exist
+- [ ] (Windows) Check Task Scheduler for any issues (if scheduled tasks were created)
+- [ ] VS Code/Code Builder shows no errors in the Output panel
+- [ ] Restart the editor and MCP server loads successfully
+
+---
+
+### � Check Installation Manually
+
+#### Windows (PowerShell)
 ```powershell
-# Windows
-.\update.ps1
+# Verify repository exists
+Test-Path "C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt\MCP\mcp_server_toolkit"
+
+# Verify build files exist
+Test-Path "C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt\MCP\mcp_server_toolkit\build\index.js"
+
+# Check configuration
+Get-Content "C:\Users\codebuilder\.vscode-server\data\User\globalStorage\salesforce.salesforcedx-einstein-gpt\settings\a4d_mcp_settings.json" | ConvertFrom-Json
 ```
 
+#### Unix/Linux (Bash)
 ```bash
-# Unix/Linux
-./update.sh
+# Verify repository exists
+test -d ~/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt/MCP/mcp_server_toolkit && echo "Directory exists" || echo "Directory missing"
+
+# Verify build files exist
+test -f ~/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt/MCP/mcp_server_toolkit/build/index.js && echo "File exists" || echo "File missing"
+
+# Check configuration
+cat ~/.local/share/code-server/User/globalStorage/salesforce.salesforcedx-einstein-gpt/settings/a4d_mcp_settings.json | jq
 ```
 
 ---
-
-## 📞 Support & Documentation
-
-### Need Help?
-
-1. **Check the log files** - They contain detailed information about any errors
-2. **Review the Troubleshooting section** - Solutions for common issues
-3. **Verify Installation** - Follow the checklist in the Troubleshooting section
-4. **Check file permissions** - Especially on Unix/Linux systems
-
-### Repository Information
-
-- **MCP Server Toolkit**: https://github.com/franturino/mcp_server_toolkit
-- **Setup Scripts**: https://github.com/franturino/mcp-server-setup
-- **Issues/Feedback**: Create an issue on GitHub if you encounter problems
-
-### Key Features
-
-✅ **Automated Installation** - One command setup  
-✅ **Automatic Updates** - Scheduled updates keep you current  
-✅ **Permission Management** - Automatic read-only protection  
-✅ **Workflow Sync** - Latest workflows copied automatically  
-✅ **Detailed Logging** - Every step logged for troubleshooting  
-✅ **Multiple Workflows** - Retrieve, update, and manage defects  
-✅ **Salesforce Integration** - Full MCP server integration  
-
----
-
-**Last Updated**: November 11, 2025  
-**Version**: 2.0 (Enhanced Documentation)
 
 ````
 
@@ -722,4 +874,126 @@ The workflow accepts the following inputs:
 
 ### 📤 Output
 
+### 📤 Output
+
 The workflow creates a task that returns the metadata records associated with the specified defect. This is useful for tracking, auditing, or validating import configurations.
+
+---
+
+## Available Workflows
+
+The toolkit includes pre-configured workflows for managing defects and metadata in Salesforce. Each workflow is defined as a Markdown file in the `workflows/` directory.
+
+### 📋 Workflow List
+
+| Workflow File | Purpose | Inputs |
+|---------------|---------|--------|
+| `retrieve-metadata-of-defect.md` | Query metadata associated with a defect | Defect ID or Code |
+| `update-status-defect.md` | Update defect status with validation | Defect Code, New Status |
+| `get-detect_details.md` | Retrieve details for one or more defects | Comma-separated defect codes |
+| `get-defect_details_by_status_and_developer.md` | Get defects by developer and status filter | Developer Name, Status(es) |
+| `insert-confmanuale.md` | Insert manual configuration for a defect | Defect Code, Configuration Note |
+| `create_metadata_defect.md` | Create metadata record for Salesforce import | Defect ID/Code, Table Name, External Codes |
+| `insert-ExternalCode.md` | Link external codes to defect metadata | Defect Code, External Code List |
+
+### 🔄 Workflow Features
+
+All workflows include:
+- ✅ **Interactive prompts** - Request user input if not provided
+- ✅ **Input validation** - Check for allowed values
+- ✅ **Error handling** - Display clear error messages
+- ✅ **MCP integration** - Use the `mcp_server_toolkit` for backend operations
+
+### 📥 Using Workflows
+
+#### In Salesforce Code Builder
+
+```
+/workflow-name.md [arg1] [arg2]
+```
+
+**Example** (provide all arguments):
+```
+/update-status-defect.md "D-123" "Ready to Test"
+```
+
+**Example** (let workflow prompt for missing arguments):
+```
+/update-status-defect.md
+# Workflow will ask: "Enter Defect Code: ", then "Enter Status: "
+```
+
+#### Common Workflow Parameters
+
+**Valid Defect Statuses**:
+```
+New, Re-opened, Sospeso, Need More Information, Non Deployabile, 
+Fix in Process, Ready to Test, In Deployment, Deploy PREPROD, 
+Ready to test - NEW INTEGRA, Deploy SUPPORT, Ready to test - PREPROD, 
+Ready to test - SUPPORT, Closed - End of life, Closed - Duplicate, 
+Closed - Rejected, Closed - Resolved, Not a Defect, Deploy PROD
+```
+
+---
+
+## 📞 Support & Documentation
+
+### Getting Help
+
+1. **Check the log files** - Located in the setup script directory
+   - `install_YYYYMMDD_HHMMSS.log` - Installation log
+   - `update_YYYYMMDD_HHMMSS.log` - Update log
+
+2. **Review the Troubleshooting section above** - Solutions for common issues
+
+3. **Verify your installation** - Use the checklist in Troubleshooting → Verification Checklist
+
+4. **Check file permissions** - Especially important on Unix/Linux systems
+
+### Repository Links
+
+- 📦 **MCP Server Toolkit**: https://github.com/franturino/mcp_server_toolkit
+- 🛠️ **Setup Scripts**: https://github.com/franturino/mcp-server-setup
+- 🐛 **Report Issues**: Create an issue on GitHub
+
+### Key Features Summary
+
+✅ **Automated Installation** - Single command setup  
+✅ **Simple Updates** - Pull latest changes anytime  
+✅ **File Protection** - Automatic read-only management  
+✅ **Workflow Tools** - Pre-built automation workflows  
+✅ **Detailed Logging** - Complete audit trail  
+✅ **Salesforce Integration** - Full MCP server support  
+✅ **Cross-Platform** - Works on Windows, Linux, and macOS  
+
+---
+
+## 📝 After Installation
+
+### First Steps
+
+1. ✅ Verify MCP server is active in VS Code
+2. ✅ Restart VS Code or Code Builder
+3. ✅ Check workflows are available (try `/` to see list)
+4. ✅ Run a simple workflow to test
+
+### Regular Maintenance
+
+- **Monthly**: Run `update.ps1` or `update.sh` to get latest features
+- **As needed**: Check log files for warnings or errors
+- **Periodically**: Verify file permissions are correct
+
+### Staying Updated
+
+The update scripts keep you current with:
+- Latest bug fixes
+- New features and workflows
+- Security updates
+- Dependency updates
+
+Simply run the update script whenever you want the latest version!
+
+---
+
+**Last Updated**: November 12, 2025  
+**Version**: 2.1 (Complete Installation & Usage Guide)
