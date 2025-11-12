@@ -10,10 +10,10 @@
 - @(nomi_risorse)[max=10]: Ecco le risorse modificate oggi: "@risorse_modificate_oggi". Quali vuoi includere nel deploy?
 
 # 4. Prompt LLM per inferire la tipologia di ciascuna risorsa
-- <command>[(risorse_tipizzate)]: Per ciascun nome in "@nomi_risorse", determina la tipologia Salesforce corretta (es. ApexClass, CustomObject, ApexTrigger, LightningComponentBundle, ecc.) e restituisci una lista strutturata pronta per package.xml
+- <command>[(risorse_tipizzate)]: Per ciascun nome in "@nomi_risorse", determina la tipologia Salesforce corretta e restituisci una lista strutturata pronta per package.xml
 
 # 5. Costruzione del package.xml nel formato Salesforce
-- <command>[(packageXml)]: Genera un file package.xml valido per Salesforce utilizzando le risorse tipizzate in "@risorse_tipizzate"
+- <command>[(packageXml)]: Genera un file package.xml valido per Salesforce utilizzando le risorse tipizzate in "@risorse_tipizzate". Le risorse di stessa tipologia devono appartenere allo stesso parent.
 
 # 6. Esecuzione del tool create_defect_metadata_salesforce sul server MCP
 - <tool>: mcp_server_toolkit.create_defect_metadata_salesforce --defectCode "@defectCode" --packageXml "@packageXml"
