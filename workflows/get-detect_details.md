@@ -1,19 +1,19 @@
-# Workflow: Richiedi Dettagli Multipli Defect
+# Workflow: Request Multiple Defect Details
 
-# 1. Controlla se l'input 'defect_codes' è vuoto
-- @(richiesta_codici)[max=5]: La variabile 'defect_codes' è vuota? (Se 'yes', chiedi all'utente di inserirla)
+# 1. Check if the input 'defect_codes' is empty
+- @(request_codes)[max=5]: Is the variable 'defect_codes' empty? (If 'yes', ask the user to provide it)
 
-# 2. Se vuota, chiedi all'utente di inserire i codici dei defect
-- (richiesta_codici)<input>[(defect_codes)]: Inserisci i codici dei defect separati da virgola (es. D-123,D-456)
+# 2. If empty, ask the user to enter the defect codes
+- (request_codes)<input>[(defect_codes)]: Enter the defect codes separated by commas (e.g., D-123,D-456)
 
-# 3. Prepara la lista dei codici separati
+# 3. Prepare the list of separated codes
 - <command>[(defect_list)]: echo "{{defect_codes}}" | tr ',' '\n' | sed 's/^[ \t]*//;s/[ \t]*$//'
 
-# 4. Per ogni codice nella lista, crea un task per recuperare i dettagli
+# 4. For each code in the list, create a task to retrieve the details
 - <foreach>: defect_list
   do:
     - <tool>: mcp_server_toolkit
       method: getDefectDetails
       parameters:
         defectId: {{item}}
-    - <output>: Recuperati i dettagli per il defect {{item}}
+    - <output>: Retrieved details for defect {{item}}
