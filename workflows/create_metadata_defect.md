@@ -32,5 +32,17 @@
 # 9. Create metadata for the Defect on MCP
 - <tool>: mcp_server_toolkit.create_defect_metadata_salesforce --defectCode "@defectCode" --packageXml "@packageXml"
 
-# 10. Final output
+# 10. Ask if the user wants to update the Defect status
+- @(update_status)[options=["Yes", "No"]]: Do you want to update the status of Defect "@defectCode" to "In Deployment"?
+
+# 11. If yes, update the status
+- (Yes)<tool>: mcp_server_toolkit.update_defect_status_salesforce --defectCode "@defectCode" --newStatus "In Deployment"
+
+# 12. Ask if the user wants to create a tracking Defect
+- (Yes)@(create_tracking)[options=["Yes", "No"]]: Do you want to create a tracking Defect for "@defectCode"?
+
+# 13. If yes, create the tracking Defect
+- (Yes)<tool>: mcp_server_toolkit.create_tracking_defect --defectCode "@defectCode"
+
+# 14. Final output
 - <output>: Metadata successfully created for Defect "@defectCode".
