@@ -1,22 +1,36 @@
-# Workflow: Creazione Metadata per Defect Salesforce
+# Workflow: Metadata Creation for Salesforce Defect
 
-# 1. Acquisizione del codice del Defect (passato come parametro iniziale)
-- <input>[(defectCode)]: Inserisci il codice del Defect (es. D-123)
+# 1. Acquire the Defect Code
+- <input>[(defectCode)]: Enter the Defect code (e.g., D-123)
 
-# 2. Recupera le risorse modificate oggi in Code Builder
-- <command>[(risorse_modificate_oggi)]: Analizza lo stato del progetto in Code Builder e restituisci l'elenco delle risorse Salesforce modificate oggi (formato: nomi file o identificatori logici)
+# 2. Choose resource selection mode (with buttons)
+- @(selection_mode)[options=["Automatic", "Manual"]]: How would you like to select the resources to include in the deploy?  
+  - **Automatic**: Scan the local project directory for files modified today  
+  - **Manual**: Manually enter the list of resources
 
-# 3. Mostra all'utente le risorse modificate e chiedi quali includere nel deploy
-- @(nomi_risorse)[max=10]: Ecco le risorse modificate oggi: "@risorse_modificate_oggi". Quali vuoi includere nel deploy?
+# 3A. Automatic mode: scan for files modified today
+- (Automatic)<command>[(modified_resources_today)]: Scan the local Salesforce project directory and return the list of files modified today. Include only deployable files (e.g., Apex, LWC, metadata XML).
 
-# 4. Prompt LLM per inferire la tipologia di ciascuna risorsa
-- <command>[(risorse_tipizzate)]: Per ciascun nome in "@nomi_risorse", determina la tipologia Salesforce corretta e restituisci una lista strutturata pronta per package.xml
+# 3B. Manual mode: user provides resource list
+- (Manual)<input>[(modified_resources_today)]: Manually enter the list of resources to include in the deploy (comma-separated)
 
-# 5. Costruzione del package.xml nel formato Salesforce
-- <command>[(packageXml)]: Genera un file package.xml valido per Salesforce utilizzando le risorse tipizzate in "@risorse_tipizzate". Le risorse di stessa tipologia devono appartenere allo stesso parent.
+# 4. Check if any resources were found or provided
+- @(no_resources): Is the list "@modified_resources_today" empty? (Reply 'yes' to stop the workflow)
 
-# 6. Esecuzione del tool create_defect_metadata_salesforce sul server MCP
+# 5. If no resources, stop the workflow
+- (no_resources)<output>: No resources were provided or modified today. Workflow has been stopped.
+
+# 6. If resources exist, ask which ones to include in the deploy
+- @(selected_resources): Here are the available resources: "@modified_resources_today". Which ones do you want to include in the deploy?
+
+# 7. Infer the Salesforce type of each selected resource
+- <command>[(typed_resources)]: For each name in "@selected_resources", determine the correct Salesforce type and return a structured list ready for package.xml
+
+# 8. Generate the package.xml file
+- <command>[(packageXml)]: Generate a valid Salesforce package.xml file using the typed resources in "@typed_resources". Resources of the same type must be grouped under the same parent.
+
+# 9. Create metadata for the Defect on MCP
 - <tool>: mcp_server_toolkit.create_defect_metadata_salesforce --defectCode "@defectCode" --packageXml "@packageXml"
 
-# 7. Output finale
-- <output>: Metadata creati con successo per il Defect "@defectCode".
+# 10. Final output
+- <output>: Metadata successfully created for Defect "@defectCode".
